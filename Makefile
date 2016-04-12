@@ -1,17 +1,22 @@
 # set compiler flags and misc
 CC = g++
 CFLAGS = -std=c++11 -Wall -Werror -pedantic -O0
+
+exercise1: override CFLAGS = -DEXERCISE_1 -std=c++11 -Wall -Werror -pedantic -O0
+
 LFLAGS =
-OUTDIR = bin
 OUTNAME = main
 
 SRCDIR = ./src
 OBJDIR = ./obj
 BINDIR = ./bin
+
+# file names
 SRC = sorting/mergesort.cpp
+
 OBJ = $(notdir $(SRC:%.cpp=%.o))
 
-all: runnable
+all: compile
 
 runnable: $(OUTNAME)
 
@@ -28,3 +33,6 @@ $(OBJDIR)/$(OBJ): $(SRCDIR)/$(SRC)
 clean:
 	rm -f ./obj/*
 	rm -f ./bin/*
+
+
+exercise1: runnable
