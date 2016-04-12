@@ -5,10 +5,26 @@ LFLAGS =
 OUTDIR = bin
 OUTNAME = main
 
-SRC = ./src/sorting/mergesort.cpp
+SRCDIR = ./src
+OBJDIR = ./obj
+BINDIR = ./bin
+SRC = sorting/mergesort.cpp
+OBJ = $(notdir $(SRC:%.cpp=%.o))
 
-$(OUTNAME): $(SRC)
-	$(CC) $(CFLAGS) $(LFLAGS) -o $@ -c $(SRC)
+all: runnable
+
+runnable: $(OUTNAME)
+
+compile: $(OBJDIR)/$(OBJ)
+
+$(OUTNAME): $(OBJDIR)/$(OBJ)
+	mkdir -p $(BINDIR)
+	$(CC) $(CFLAGS) -o $(BINDIR)/$@ $(OBJDIR)/$(OBJ)
+
+$(OBJDIR)/$(OBJ): $(SRCDIR)/$(SRC)
+	mkdir -p $(OBJDIR)
+	$(CC) $(CFLAGS) -o $@ -c $<
 
 clean:
+	rm -f ./obj/*
 	rm -f ./bin/*
