@@ -1,8 +1,12 @@
 # set compiler flags and misc
 CC = g++
-CFLAGS = -std=c++11 -Wall -Werror -pedantic -O0
 
-exercise1: override CFLAGS = -DEXERCISE_1 -std=c++11 -Wall -Werror -pedantic -O0
+GTEST_DIR = /opt/gtest
+
+# CFLAGS = -std=c++11 -Wall -Wextra -Werror -isystem $(GTEST_DIR)/include -pedantic -O0
+CFLAGS = -std=c++11 -Wall -Wextra -isystem $(GTEST_DIR)/include -pedantic -O0
+
+TFLAGS = -g -pthread -DTEST
 
 LFLAGS =
 OUTNAME = main
@@ -10,29 +14,43 @@ OUTNAME = main
 SRCDIR = ./src
 OBJDIR = ./obj
 BINDIR = ./bin
+TESTDIR = ./test
 
 # file names
-SRC = sorting/mergesort.cpp
+SRC = ./src/sorting/mergesort.cpp
+OBJFILES = $(notdir $(SRC:%.cpp=%.o))
+OBJ = $(OBJFILES:%=$(OBJDIR)/%)
 
-OBJ = $(notdir $(SRC:%.cpp=%.o))
+TESTSRC = ./test/all_test.cpp
+TESTOBJFILES = $(notdir $(TESTSRC:%.cpp=%.o))
+TESTOBJ = $(TESTOBJFILES:%=$(OBJDIR)/%)
 
 all: compile
 
 runnable: $(OUTNAME)
 
-compile: $(OBJDIR)/$(OBJ)
+compile: $(OBJ)
 
-$(OUTNAME): $(OBJDIR)/$(OBJ)
+
+$(TESTOBJ): $(TESTSRC)
+	$(CC) $(CFLAGS) $(TFLAGS) -o $@ -c $^
+
+# TODO Don't always delete the *.o files
+
+test: $(OBJ) $(TESTOBJ) $(GTEST_DIR)/lib/gtest_main.a
+	$(CC) $(CFLAGS)  $(TFLAGS) $(LFLAGS) -lpthread $^ -o $(BINDIR)/test
+	rm -rf ./obj
+
+
+$(OUTNAME): $(OBJ)
 	mkdir -p $(BINDIR)
-	$(CC) $(CFLAGS) -o $(BINDIR)/$@ $(OBJDIR)/$(OBJ)
+	$(CC) $(CFLAGS) $(LFLAGS) -o $(BINDIR)/$@ $^
+	rm -rf ./obj
 
-$(OBJDIR)/$(OBJ): $(SRCDIR)/$(SRC)
+$(OBJ): $(SRC)
 	mkdir -p $(OBJDIR)
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 clean:
-	rm -f ./obj/*
+	rm -rf ./obj
 	rm -f ./bin/*
-
-
-exercise1: clean runnable

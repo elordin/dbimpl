@@ -50,7 +50,7 @@ void externalSort(int fdInput, uint64_t size, int fdOutput, uint64_t memSize) {
 
 
 #ifdef EXERCISE_1
-
+/*
 int main(int argc, char **argv) {
 
     if (argc < 4) {
@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
         // sort input to ouput
 
         // read output file
-
+        */
         /*
         // validate output file
         int prevValue = -1;
@@ -89,10 +89,10 @@ int main(int argc, char **argv) {
             }
             prevValue = currValue;
         }
-        */
+        *//*
     }
     return EXIT_SUCCESS;
 
 }
-
+*/
 #endif
