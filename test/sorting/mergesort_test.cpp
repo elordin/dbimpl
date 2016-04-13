@@ -17,6 +17,8 @@ TEST (MergeSortTest, ProperSorting) {
 
 TEST (MergeSortTest, HandlesDuplicates) {
     // e.g. sort([4,7,15,103,7,1]) = [1,4,7,7,15,103]
+    // e.g. sort([4,7,7,15,103,1]) = [1,4,7,7,15,103]
+    // e.g. sort([7,7,7,7,7,7,7])  = [7,7,7,7,7,7,7]
 }
 
 
@@ -35,8 +37,11 @@ TEST (MergeSortTest, HandlesInsufficientMemory) {
 TEST (MergeSortTest, HandlesTooHighMemoryDemand) {
 }
 
+#ifdef EXERCISE_1_TEST
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
+
+#endif

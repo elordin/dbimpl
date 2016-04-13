@@ -35,4 +35,4 @@ clean:
 	rm -f ./bin/*
 
 
-exercise1: runnable
+exercise1: clean runnable

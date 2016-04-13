@@ -3,11 +3,47 @@
 #include <iostream>
 #include <fstream>
 #include <queue>
+#include <algorithm>
 
 using namespace std;
 
 void externalSort(int fdInput, uint64_t size, int fdOutput, uint64_t memSize) {
-    // TODO
+
+    // Number of partitions to fit one partition in memSize memory.
+    int k = size * sizeof(uint64_t) / memSize;
+
+    // Max number of members of a single partition
+    uint64_t partitionSize = size / k;
+
+    int lineNum = 0;
+    int pindex  = 0;
+
+    char *line;
+
+    vector<uint64_t> partitionBuffer = vector<uint64_t>();
+
+    while (/* TODO Read next line from fdInput*/false) {
+
+        int i = stoi(line);
+
+        // Append i to partition
+        partitionBuffer.push_back(i);
+
+        lineNum++;
+        if (lineNum % partitionSize == 0) {
+            // TODO Create new tmp file for partition #pindex
+
+            sort(partitionBuffer.begin(), partitionBuffer.end());
+
+            // TODO Write sorted partitionBuffer to tmp file
+
+            partitionBuffer.clear();
+            pindex++;
+        }
+    }
+
+    // TODO Merge tmp files into output file
+
 }
 
 
