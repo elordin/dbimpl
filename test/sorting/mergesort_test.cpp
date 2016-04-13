@@ -1,7 +1,16 @@
 #include "gtest/gtest.h"
 
+#include <vector>
+
+using namespace std;
+
 TEST (MergeSortTest, EmptyStaysEmpty) {
     // e.g. sort([]) == []
+
+    // Create empty file
+    // Sort empty file
+    // Validate empty files emptiness
+    ASSERT_EQ(vector<uint64_t>(), vector<uint64_t>());
 }
 
 
