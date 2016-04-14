@@ -11,71 +11,60 @@
 
 using namespace std;
 
-uint64_t loadNextInt(int fd) {
-    string line;
-    // TODO Read line from file
-    return stoi(line);
-}
-
 void externalSort(int fdInput, uint64_t size, int fdOutput, uint64_t memSize) {
+    /*
+    - It is desirable to load the input file block wise to reduce seek time
+    - memSize memory available
+    - needs to contain both the buffer read from input file and the current partition
+    - each number from input file is at least 2 bytes (1 numeral, 1 newline)
+    - each number from input file is at max  21 bytes ("18446744073709551615" + 1 newline)
+    */
+
     // Number of partitions to fit one partition in memSize memory.
     uint k = size * sizeof(uint64_t) / memSize;
-
-    vector<uint64_t> partitionBuffer = vector<uint64_t>();
-    uint lineNum = 0;
 
     if (k < 2) {
         // All data fits into memory
 
-        // Read from file
-        while (lineNum < size) {
-            int i = loadNextInt(fdInput);
-            partitionBuffer.push_back(i);
-            lineNum++;
-        }
+        // Read from input file
+            // Read block wise into buffer
+            // Read lines from buffer
+            // Parse line
 
-        sort(partitionBuffer.begin(), partitionBuffer.end());
-        // TODO Write sorted partitionBuffer to output file
+        // Close input file
+
+        // Sort
+
+        // Write to output file
+
+        // Close output file
     } else {
-        // Max number of members of a single partition
-        uint64_t partitionSize = size / k;
+        // Read from input file
+            // When as many elements as fit into a partition have been loaded
+            // Sort partition
+            // Allocate new file
+            // Write partition to file
+            // Store fd for tmp file
 
-        int pindex  = 0;
+        // Close input file
 
-        vector<int> tmpFds = vector<int>();
+        // Merge tmp files into output file
+            // For each tmp file load first number
+            // Find smallest number and write it to ouput file
+            // Load next number from the file that contained the smallest number
+            // Repeat until all tmp files are exhausted
 
-        while (lineNum < size) {
-            int i = loadNextInt(fdInput);
-            partitionBuffer.push_back(i);
-            lineNum++;
+        // Close output file
 
-            // Dump sorted partition into file when buffer reaches partition-size
-            if (lineNum % partitionSize == 0) {
-                sort(partitionBuffer.begin(), partitionBuffer.end());
-
-                // TODO Create new tmp file for partition #pindex
-                // TODO Append fd to tmpFds
-                // TODO Write sorted partitionBuffer to tmp file
-
-                partitionBuffer.clear();
-                pindex++;
-            }
-        }
-
-        // TODO Merge tmp files into output file
+        // Remove tmp files
     }
 }
 
-/*
 int main(int argc, char **argv) {
-
     if (argc < 4) {
-
-        cout << "Insufficient arguments. Aborting.\n";
+        cout << "Insufficient arguments. Aborting." << endl;
         return EXIT_FAILURE;
-
     } else {
-
         // Get command line arguments
         char *inputFile  = argv[1];
         char *outputFile = argv[2];
@@ -86,28 +75,17 @@ int main(int argc, char **argv) {
                 outputFile  << "\n" <<
                 memSize     << "\n";
 
-        // open input file
+        // Open input file
 
-        // sort input to ouput
+        // Sort input to ouput
 
-        // read output file
-        */
-        /*
-        // validate output file
-        int prevValue = -1;
-        int currValue = -1;
-        int line = 0;
-        while ((currValue = parse_line) > -1) {
-            line++;
-            if (currValue < prevValue) {
-                cout << "Unsorted values found in line " << line << ". Aborting. \n";
-                return EXIT_FAILURE;
-            }
-            prevValue = currValue;
-        }
-        *//*
+        // Read output file blockwise into buffer
+            // Validate buffer contents
+                // Read line
+                // Parse line
+                // Compare to previous line
+                    // if less fault
+                    // else continue
     }
     return EXIT_SUCCESS;
-
 }
-*/
