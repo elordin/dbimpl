@@ -9,12 +9,12 @@
 
 #include "mergesort.hpp"
 
-using std;
+using namespace std;
 
 uint64_t loadNextInt(int fd) {
     string line;
     // TODO Read line from file
-    return stoi(line)
+    return stoi(line);
 }
 
 void externalSort(int fdInput, uint64_t size, int fdOutput, uint64_t memSize) {
@@ -22,7 +22,7 @@ void externalSort(int fdInput, uint64_t size, int fdOutput, uint64_t memSize) {
     uint k = size * sizeof(uint64_t) / memSize;
 
     vector<uint64_t> partitionBuffer = vector<uint64_t>();
-    int lineNum = 0;
+    uint lineNum = 0;
 
     if (k < 2) {
         // All data fits into memory
@@ -34,7 +34,7 @@ void externalSort(int fdInput, uint64_t size, int fdOutput, uint64_t memSize) {
             lineNum++;
         }
 
-        sort(partitionBuffer.begin(), partitionBuffer.end())
+        sort(partitionBuffer.begin(), partitionBuffer.end());
         // TODO Write sorted partitionBuffer to output file
     } else {
         // Max number of members of a single partition
