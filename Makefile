@@ -28,6 +28,7 @@ TESTOBJ = $(TESTOBJFILES:%=$(OBJDIR)/%)
 all: compile
 
 run: clean runnable
+	./gen nums 20
 	./bin/main nums out 1
 
 

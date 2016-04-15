@@ -16,14 +16,14 @@ void externalSort(int fdInput, uint64_t size, int fdOutput, uint64_t memSize) {
         vector<uint64_t> partition(size);
 
         // Read from input file
-        if (read(fdInput, &partition[0], 1) < 1) {
+        if (read(fdInput, &partition[0], size * sizeof(uint64_t)) < 1) {
             cout << "No data found.\n";
             return;
         }
-
+        
         // Sort
         sort(partition.begin(), partition.end());
-
+ 
         // Write to output file
         if (posix_fallocate(fdOutput, 0, size * sizeof(uint64_t)) != 0) {
             cout << "Could not allocate space for output file.\n";
@@ -33,6 +33,9 @@ void externalSort(int fdInput, uint64_t size, int fdOutput, uint64_t memSize) {
             }
         }
     } else {
+        uint partitionSize = memSize / sizeof(uint64_t);
+        vector<int> tmpFds(k);
+        vector<uint64_t> buffer(partitionSize);
         // Read from input file
             // When as many elements as fit into a partition have been loaded
             // Sort partition
@@ -77,7 +80,8 @@ int main(int argc, char **argv) {
             return EXIT_FAILURE;
         }
         // Sort input to ouput
-        externalSort(fdInput, 15, fdOutput, memSize);
+        // TODO Where do we get the size parameter?
+        externalSort(fdInput, 20, fdOutput, memSize);
 
         // Read output file
         // Validate output file
