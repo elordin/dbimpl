@@ -27,6 +27,10 @@ TESTOBJ = $(TESTOBJFILES:%=$(OBJDIR)/%)
 
 all: compile
 
+run: clean runnable
+	./bin/main nums out 1
+
+
 runnable: $(OUTNAME)
 
 compile: $(OBJ)
