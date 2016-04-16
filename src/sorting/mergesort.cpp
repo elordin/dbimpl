@@ -9,8 +9,8 @@ using namespace std;
 
 void externalSort(int fdInput, uint64_t size, int fdOutput, uint64_t memSize) {
     // Number of partitions to fit one partition in memSize memory.
-    const uint k = size * sizeof(uint64_t) / memSize + 1;
-
+    const uint k = 2; // size * sizeof(uint64_t) / memSize + 1;
+    
     if (k < 2) {
         // All data fits into memory
         vector<uint64_t> partition(size);
@@ -33,10 +33,49 @@ void externalSort(int fdInput, uint64_t size, int fdOutput, uint64_t memSize) {
             }
         }
     } else {
-        uint partitionSize = memSize / sizeof(uint64_t);
+        // uint partitionSize = memSize - (memSize % sizeof(uint64_t)); // Don't read partial numbers
+        
+        // Byte size of the partition
+        uint partitionSize = size / k * sizeof(uint64_t);
+        // List of all tmp files
         vector<int> tmpFds(k);
-        vector<uint64_t> buffer(partitionSize);
+        vector<uint64_t> buffer(size / k);
+        int tmpFd;
+        int partitionNumber = -1;
+        char filename[32];
+        
         // Read from input file
+        while (read(fdInput, &buffer[0], partitionSize) > 0) {
+      
+            // Sort
+            sort(buffer.begin(), buffer.end());
+                        
+            partitionNumber++;
+            
+            // New filename
+            sprintf(filename, ".tmpPart%i", partitionNumber);
+            
+            if ((tmpFd = open(filename, O_CREAT | O_TRUNC | O_RDWR, S_IRUSR|S_IWUSR)) < 0) {
+                cout << "Could not open output file. Aborting.\n";
+                return;
+            }
+            if (posix_fallocate(tmpFd, 0, partitionSize) != 0) {
+               cout << "Could not allocate file space for partition.\n";
+                return;
+            }            
+            if (write(tmpFd, &buffer[0], partitionSize) < 0) {
+                cout << "Error writing partition.";
+                return;
+            }
+            
+            tmpFds.push_back(tmpFd);
+            close(tmpFd);
+        }
+        
+        if (partitionNumber < 0) {
+            cout << "No data found." << endl;
+            return;    
+        }
             // When as many elements as fit into a partition have been loaded
             // Sort partition
             // Allocate new file
@@ -59,8 +98,8 @@ void externalSort(int fdInput, uint64_t size, int fdOutput, uint64_t memSize) {
 
 int main(int argc, char **argv) {
     if (argc < 4) {
-        cout << "Insufficient arguments. Aborting." << endl;
-        return EXIT_FAILURE;
+        cout << "Usage: ./main <input file> <output file> <memory in MB>" << endl;
+        return EXIT_SUCCESS;
     } else {
         // Get command line arguments
         char *inputFileName  = argv[1];
@@ -71,12 +110,12 @@ int main(int argc, char **argv) {
         // Open input file
         int fdInput, fdOutput;
         if ((fdInput = open(inputFileName, O_RDONLY)) < 0) {
-            cout << "Could not open input file. Aborting.\n";
+            cout << "Could not open input file. Aborting." << endl;
             return EXIT_FAILURE;
         }
 
         if ((fdOutput = open(outputFileName, O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR|S_IWUSR)) < 0) {
-            cout << "Could not open output file. Aborting.\n";
+            cout << "Could not open output file. Aborting." << endl;
             return EXIT_FAILURE;
         }
         // Sort input to ouput
