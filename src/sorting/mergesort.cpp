@@ -64,33 +64,75 @@ void externalSort(int fdInput, uint64_t size, int fdOutput, uint64_t memSize) {
                 return;
             }            
             if (write(tmpFd, &buffer[0], partitionSize) < 0) {
-                cout << "Error writing partition.";
+                cout << "Error writing partition." << endl;
                 return;
             }
             
             tmpFds.push_back(tmpFd);
-            close(tmpFd);
         }
+        
+        cout << partitionNumber << endl;
         
         if (partitionNumber < 0) {
             cout << "No data found." << endl;
             return;    
         }
-            // When as many elements as fit into a partition have been loaded
-            // Sort partition
-            // Allocate new file
-            // Write partition to file
-            // Store fd for tmp file
-
-        // Close input file
-
+        
+        /*
+        uint entriesPerPartition = memSize / sizeof(uint64_t) / (partitionNumber + 1);
+        cout << entriesPerPartition << endl;
+        
+        vector<vector<uint64_t>> numbers(partitionNumber + 1);
+        
+        cout << numbers.size() << endl;
+        
+        for (int i = 0; i <= partitionNumber; i++) {
+            vector<uint64_t> partitionSegment(entriesPerPartition);
+            
+            if (read(tmpFds[i], &partitionSegment[0], entriesPerPartition * sizeof(uint64_t)) < 1) {
+                cout << "Empty partition found." << endl;
+            }
+            
+            reverse(partitionSegment.begin(), partitionSegment.end());
+            numbers[i] = partitionSegment;
+        }
+        
+        for (uint i = 0; i < numbers.size(); i++) {
+            for (uint j = 0; j < numbers[i].size(); j++) {
+                cout << numbers[i][j] << " | ";
+            }
+            cout << endl;
+        }
+        */
+        
+        /*
+        while (numbers.size() > 1) {
+            // Find smallest number
+            
+            int smallestIndex = 0; 
+            for (uint i = 0; i <= numbers.size(); i++) {
+                if (numbers[i].back() < numbers[smallestIndex].back()) {
+                    smallestIndex = i;
+                }
+            }
+            if (write(fdOutput, &(numbers[smallestIndex].back()), sizeof(uint64_t)) < 0) {
+                cout << "Error writing result." << endl;
+                return;
+            }
+            numbers[smallestIndex].pop_back();
+            if (numbers[smallestIndex].size() < 1) {
+                // Reload more data 
+                // If none is available, close and remove from numbers
+            }
+        }
+        */
         // Merge tmp files into output file
             // For each tmp file load first number
             // Find smallest number and write it to ouput file
             // Load next number from the file that contained the smallest number
             // Repeat until all tmp files are exhausted
 
-        // Close output file
+        // Write last vector en bloc
 
         // Remove tmp files
     }
