@@ -96,6 +96,23 @@ void externalSort(int fdInput, uint64_t size, int fdOutput, uint64_t memSize) {
     }
 }
 
+int validateOutputFile(int fdOutput){
+	
+	uint64_t oldElement = 0;
+	uint64_t nextElement;
+
+	while (read(fdOutput, &nextElement, sizeof(uint64_t)) > 0) {
+    		if (nextElement < oldElement) return EXIT_FAILURE;
+		//cout << nextElement << " größer als " << oldElement << endl;
+    		oldElement = nextElement;
+	}	
+
+	cout << "Validation successful" << endl;
+
+	return EXIT_SUCCESS;
+}
+
+
 int main(int argc, char **argv) {
     if (argc < 4) {
         cout << "Usage: ./main <input file> <output file> <memory in MB>" << endl;
@@ -123,7 +140,8 @@ int main(int argc, char **argv) {
         externalSort(fdInput, 20, fdOutput, memSize);
 
         // Read output file
-        // Validate output file
+        // Validate output file    
+	validateOutputFile(fdOutput);   
 
         close(fdInput);
         close(fdOutput);
