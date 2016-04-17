@@ -82,6 +82,7 @@ void externalSort(int fdInput, uint64_t size, int fdOutput, uint64_t memSize) {
         // Number of numbers per segment
         uint segmentSize = 5;
 
+
         // Load the initial batch of numbers
         for (int j = 0; j <= partitionNumber; j++) {
             vector<uint64_t> segment(segmentSize);
@@ -107,7 +108,7 @@ void externalSort(int fdInput, uint64_t size, int fdOutput, uint64_t memSize) {
             return;
         }
 
-        // Merge by dumping smallest number into file and reloading data
+        // Merge by dumping smallest number into file and reloading data if necessary
         while (segments.size() > 0) {
             uint minIndex = 0;
             uint64_t minElement = segments[0].back();
@@ -119,7 +120,7 @@ void externalSort(int fdInput, uint64_t size, int fdOutput, uint64_t memSize) {
                     minElement = segments[i].back();
                 }
             }
-            
+
             // Write smallest element to output file
             if (write(fdOutput, &minElement, sizeof(uint64_t)) < 0) {
                 cout << "Error writing to output file" << endl;
@@ -141,7 +142,7 @@ void externalSort(int fdInput, uint64_t size, int fdOutput, uint64_t memSize) {
                 } else {
                     // Else remove segment from list of segments
                     // TODO Remove tmp file
-                    close(tmpFds[minIndex]); 
+                    close(tmpFds[minIndex]);
                     segments.erase(segments.begin() + minIndex);
                 }
             }
@@ -156,6 +157,7 @@ int validateOutputFile(int fdOutput) {
 	uint64_t nextElement;
 
     cout << "Validating" << endl;
+    // TODO Never seems to enter this loop
     while (read(fdOutput, &nextElement, sizeof(uint64_t)) > 0) {
         cout << nextElement << endl;
         if (nextElement < oldElement) return -1;
@@ -189,7 +191,7 @@ int main(int argc, char **argv) {
         }
         // Sort input to ouput
         // TODO Where do we get the size parameter?
-        externalSort(fdInput, 20, fdOutput, memSize);
+        externalSort(fdInput, 10000000, fdOutput, memSize);
 
         // Validate output file
         lseek(fdOutput, 0, SEEK_SET);
