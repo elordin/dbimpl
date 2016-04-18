@@ -142,17 +142,25 @@ void externalSort(int fdInput, uint64_t size, int fdOutput, uint64_t memSize) {
                     segments[minIndex] = segment;
                 } else {
                     // Else remove segment from list of segments
-                    // TODO Remove tmp file
                     close(tmpFds[minIndex]);
                     segments.erase(segments.begin() + minIndex);
                 }
             }
         }
-        lseek(fdOutput, 0, SEEK_SET);
+
+        // Clean up after yourself
+        for (int i = 0; i <= partitionNumber; i++) {
+            sprintf(filename, ".tmpPart%i", i);
+            if (remove(filename) != 0) {
+                cout << "Error deleting tmp file." << endl;
+            }
+        }
     }
 }
 
 int validateOutputFile(int fdOutput) {
+
+    lseek(fdOutput, 0, SEEK_SET);
 
 	uint64_t oldElement = 0;
 	uint64_t nextElement;
