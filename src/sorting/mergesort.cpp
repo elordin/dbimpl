@@ -162,10 +162,14 @@ int validateOutputFile(int fdOutput) {
 
     lseek(fdOutput, 0, SEEK_SET);
 
-	uint64_t oldElement = 0;
-	uint64_t nextElement;
+    uint64_t oldElement = 0;
+    uint64_t nextElement;
 
     cout << "Validating" << endl;
+
+    read(fdOutput, &nextElement, sizeof(uint64_t));
+    cout << "Error message: " << strerror(errno) << endl;
+
     // TODO Never seems to enter this loop
     while (read(fdOutput, &nextElement, sizeof(uint64_t)) > 0) {
         cout << nextElement << endl;
