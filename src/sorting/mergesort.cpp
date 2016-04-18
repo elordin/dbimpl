@@ -159,16 +159,13 @@ void externalSort(int fdInput, uint64_t size, int fdOutput, uint64_t memSize) {
 }
 
 int validateOutputFile(int fdOutput) {
-
     lseek(fdOutput, 0, SEEK_SET);
 
 	uint64_t oldElement = 0;
 	uint64_t nextElement;
 
     cout << "Validating" << endl;
-    // TODO Never seems to enter this loop
     while (read(fdOutput, &nextElement, sizeof(uint64_t)) > 0) {
-        cout << nextElement << endl;
         if (nextElement < oldElement) return -1;
         oldElement = nextElement;
     }
@@ -193,7 +190,7 @@ int main(int argc, char **argv) {
             return EXIT_FAILURE;
         }
 
-        if ((fdOutput = open(outputFileName, O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR|S_IWUSR)) < 0) {
+        if ((fdOutput = open(outputFileName, O_CREAT | O_TRUNC | O_RDWR, S_IRUSR|S_IWUSR)) < 0) {
             cout << "Could not open output file. Aborting." << endl;
             close(fdInput);
             return EXIT_FAILURE;
