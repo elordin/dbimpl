@@ -201,7 +201,6 @@ int main(int argc, char **argv) {
         struct stat stats;
         fstat(fdInput, &stats);
         // Sort input to ouput
-        // TODO Where do we get the size parameter?
         externalSort(fdInput, stats.st_size / sizeof(uint64_t), fdOutput, memSize);
 
         // Validate output file
