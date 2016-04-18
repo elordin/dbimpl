@@ -3,6 +3,8 @@
 #include <fcntl.h>
 #include <algorithm>
 #include <sys/stat.h>
+#include <errno.h>
+#include <string.h>
 
 #include "mergesort.hpp"
 
