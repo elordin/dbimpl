@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <algorithm>
+#include <sys/stat.h>
 
 #include "mergesort.hpp"
 
@@ -189,9 +190,12 @@ int main(int argc, char **argv) {
             close(fdInput);
             return EXIT_FAILURE;
         }
+
+        struct stat stats;
+        fstat(fdInput, &stats);
         // Sort input to ouput
         // TODO Where do we get the size parameter?
-        externalSort(fdInput, 10000000, fdOutput, memSize);
+        externalSort(fdInput, stats.st_size / sizeof(uint64_t), fdOutput, memSize);
 
         // Validate output file
         lseek(fdOutput, 0, SEEK_SET);
