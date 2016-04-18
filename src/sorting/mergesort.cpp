@@ -3,6 +3,8 @@
 #include <fcntl.h>
 #include <algorithm>
 #include <sys/stat.h>
+#include <errno.h>
+#include <string.h>
 
 #include "mergesort.hpp"
 
@@ -161,8 +163,8 @@ void externalSort(int fdInput, uint64_t size, int fdOutput, uint64_t memSize) {
 int validateOutputFile(int fdOutput) {
     lseek(fdOutput, 0, SEEK_SET);
 
-	uint64_t oldElement = 0;
-	uint64_t nextElement;
+    uint64_t oldElement = 0;
+    uint64_t nextElement;
 
     cout << "Validating" << endl;
     while (read(fdOutput, &nextElement, sizeof(uint64_t)) > 0) {
