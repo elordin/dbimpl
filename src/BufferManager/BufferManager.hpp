@@ -2,13 +2,15 @@
 
 #include <cstdint>
 
-#include "BufferFrame.h"
+#include "BufferFrame.hpp"
+#include "Hashtable.hpp"
 
 #define PAGESIZE 8192
 
 class BufferManager {
     private:
-
+	HashTable table;
+	int framesInMemory;
     public:
         BufferManager(uint pageCount);
 
