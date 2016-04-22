@@ -1,27 +1,43 @@
-#pragma once
+#include <cstdlib>
 
 #include "BufferFrame.hpp"
 
 using namespace std;
 
-uint64_t BufferFrame::countPages = 0;
+#define PAGESIZE 8192
+
 
 //TODO: control if the page number rises
-BufferFrame::BufferFrame(void* dataForFrame){
-	pageNo = ++countPages;
-	locked = false;
-	data = dataForFrame;
+BufferFrame::BufferFrame(void* data)
+  : pageNo(++BufferFrame::countPages),
+    latch(false),
+    data(data) {
+    // Ensure data is PAGESIZE large
 }
 
-void* BufferFrame::getData(){
-	return data;
+
+BufferFrame::BufferFrame()
+  : pageNo(++BufferFrame::countPages),
+    latch(false) {
+    this->data = malloc(PAGESIZE);
 }
 
-void writeBackChanges(){
-	// insertItem(this);
+
+uint64_t BufferFrame::getPageNo() {
+    return this->pageNo;
 }
+
+
+void *BufferFrame::getData() {
+    return this->data;
+}
+
+
+void writeBackChanges() {
+    // insertItem(this);
+}
+
 
 //TODO: Destructor
-BufferFrame::~BufferFrame(){
-	
+BufferFrame::~BufferFrame() {
 }

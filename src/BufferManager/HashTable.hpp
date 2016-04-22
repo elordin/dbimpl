@@ -6,24 +6,29 @@
 #include "BufferFrame.hpp"
 
 
-class HashTable {  
-    private:    
-        std::unordered_map<uint64_t, BufferFrame*> hashtable;
-        uint64_t length;
+class HashTable {
+ private:
+    std::unordered_map<uint64_t, BufferFrame*> hashtable;
+    uint64_t length;
 
-    public:
-        //Constructor   
-        HashTable();
+ public:
+    // Constructor
+    HashTable();
 
-        int hash(uint64_t key);
-        
-        void insertItem(BufferFrame* newItem);
+    /**
+     *  Returns whether a given key is in the hash table
+     */
+    bool contains(uint64_t);
 
-        void removeItem(uint64_t key);
+    int hash(uint64_t key);
 
-        BufferFrame* getItemByKey(uint64_t key);
+    void insertItem(BufferFrame* newItem);
 
-        // Destructor
-        ~HashTable();
+    void removeItem(uint64_t key);
+
+    BufferFrame* getItemByKey(uint64_t key);
+
+    // Destructor
+    ~HashTable();
 };
 

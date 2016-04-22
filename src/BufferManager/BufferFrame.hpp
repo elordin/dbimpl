@@ -1,23 +1,32 @@
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
+
+
+enum FrameStatus {
+    NEW   = 0x01,
+    CLEAN = 0x02,
+    DIRTY = 0x04
+};
 
 
 class BufferFrame {
+ private:
+    const uint64_t pageNo;
+    bool latch;
+    int LSN;
+    FrameStatus state;
+    void* data;
 
-    private:
-        uint64_t pageNo;
-        bool locked;
-        void* data;
+    static uint64_t countPages;
 
-        static uint64_t countPages;
-    public:
-        BufferFrame(void* dataForFrame);
+ public:
+    BufferFrame(void* dataForFrame);
+    BufferFrame();
 
-        void* getData();
-        void writeBackChanges();
-        uint64_t getPageNo(){return pageNo;};
+    void* getData();
+    void writeBackChanges();
+    uint64_t getPageNo();
 
-        ~BufferFrame();
-
+    ~BufferFrame();
 };
