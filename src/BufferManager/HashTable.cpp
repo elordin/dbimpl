@@ -15,7 +15,7 @@ int HashTable::hash(uint64_t key)
 	return key % length;	
 }
 
-void HashTable::insertItem(Item* newItem)
+void HashTable::insertItem(BufferFrame* newItem)
 {
     	int i = hash(newItem -> key);
     	if(!array[i].insertItem(newItem)){
@@ -31,7 +31,7 @@ void HashTable::removeItem(uint64_t key)
 	}
 }
 
-Item* HashTable::getItemByKey(uint64_t key)
+BufferFrame* HashTable::getItemByKey(uint64_t key)
 {
     	int i = hash(key);
     	return array[i].getItem(key);

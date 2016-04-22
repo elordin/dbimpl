@@ -1,7 +1,8 @@
 #pragma once
 
 #include <cstdint>
-#include<Linked_List.h>
+#include <Linked_List.h>
+#include <BufferFrame.hpp>
 
 class HashTable {
 	
@@ -16,11 +17,11 @@ public:
 	//TODO: length not static
 	HashTable(int tableLength = 128);
     
-    	void insertItem(Item* newItem);
+    	void insertItem(BufferFrame* newItem);
     
     	bool removeItem(uint64_t key);
     
-    	Item* getItemByKey(uint64_t key);
+    	BufferFrame* getItemByKey(uint64_t key);
     
     	// Destructor
     	~HashTable();
