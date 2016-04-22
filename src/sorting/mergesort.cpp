@@ -1,10 +1,12 @@
-#include <iostream>
 #include <unistd.h>
 #include <fcntl.h>
-#include <algorithm>
 #include <sys/stat.h>
 #include <errno.h>
 #include <string.h>
+
+#include <iostream>
+#include <algorithm>
+#include <vector>
 
 #include "mergesort.hpp"
 
@@ -56,7 +58,7 @@ void externalSort(int fdInput, uint64_t size, int fdOutput, uint64_t memSize) {
             partitionNumber++;
 
             // New filename
-            sprintf(filename, ".tmpPart%i", partitionNumber);
+            snprintf(filename, 32, ".tmpPart%i", partitionNumber);
 
             if ((tmpFd = open(filename, O_CREAT | O_TRUNC | O_RDWR, S_IRUSR|S_IWUSR)) < 0) {
                 cout << "Could not open output file. Aborting." << endl;
@@ -136,7 +138,7 @@ void externalSort(int fdInput, uint64_t size, int fdOutput, uint64_t memSize) {
                     cout << "Error writing to output file" << endl;
                     for (int f = 0; f <= partitionNumber; f++) {
                         close(tmpFds[f]);
-                        sprintf(filename, ".tmpPart%i", f);
+                        snprintf(filename, 32, ".tmpPart%i", f);
                         if (remove(filename) != 0) {
                             cout << "Error deleting tmp file." << endl;
                         }
@@ -167,7 +169,7 @@ void externalSort(int fdInput, uint64_t size, int fdOutput, uint64_t memSize) {
 
         // Clean up after yourself
         for (int i = 0; i <= partitionNumber; i++) {
-            sprintf(filename, ".tmpPart%i", i);
+            snprintf(filename, 32, ".tmpPart%i", i);
             if (remove(filename) != 0) {
                 cout << "Error deleting tmp file." << endl;
             }
@@ -198,7 +200,7 @@ int main(int argc, char **argv) {
         char *inputFileName  = argv[1];
         char *outputFileName = argv[2];
         char *memSizeS       = argv[3];
-        int  memSize         = stoi(memSizeS) * (0x1 << 20); // MB, thus * 2^20
+        int  memSize         = stoi(memSizeS) * (0x1 << 20);  // MB, thus * 2^20
 
         // Open input file
         int fdInput, fdOutput;
