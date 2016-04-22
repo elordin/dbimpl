@@ -41,7 +41,4 @@ HashTable::~HashTable()
     	//TODO: Destructor
 }
 
-int main(){
-
-}
 

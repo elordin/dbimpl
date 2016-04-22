@@ -21,7 +21,7 @@ void writeBackChanges(){
 	insertItem(this);
 }
 
-//TODO: Müssen wir da noch was anderes freigeben?
+//TODO: Destructor
 BufferFrame::~BufferFrame(){
-	delete [] data;
+	
 }

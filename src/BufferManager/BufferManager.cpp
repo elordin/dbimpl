@@ -6,28 +6,27 @@ using namespace std;
 
 BufferManager::BufferManager(uint pageCount){
 	//TODO: static value?	
-	table = new HashTable(128);
+	table = new HashTable();
 	framesInMemory = pageCount;
 }
 
 BufferFrame& BufferManager::fixPage(uint64_t pageId, bool exclusive){
 	//TODO: The method can fail (by throwing an exception) if no free frame is available and no used frame can be freed	
 	if(exclusive){
-		BufferFrame* bf = getItemByKey(pageId);
-		bf.getData();
+		return getItemByKey(pageId);
 	} else {
-		BufferFrame* bf = getItemByKey(pageId);
-		bf.getData();
+		return getItemByKey(pageId);
 	}
 }
 
 void BufferManager::unfixPage(BufferFrame& frame, bool isDirty){
 	if(isDirty){
-		remove(frame.getPageNo());
+		removeItem(frame.getPageNo());
 		frame.writeBackChanges();
 	}
 }
 
+//TODO: destructor
 BufferManager::~BufferManager(){
-	delete [] table;
+	
 }

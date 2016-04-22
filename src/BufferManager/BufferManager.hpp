@@ -3,7 +3,7 @@
 #include <cstdint>
 
 #include "BufferFrame.hpp"
-#include "Hashtable.hpp"
+#include "HashTable.hpp"
 
 #define PAGESIZE 8192
 
@@ -16,7 +16,7 @@ class BufferManager {
 
         BufferFrame& fixPage(uint64_t pageId, bool exclusive);
 
-        void unfixPage(BufferFrame& frame, bool isDirty)
+        void unfixPage(BufferFrame& frame, bool isDirty);
 
         ~BufferManager();
 };
