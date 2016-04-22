@@ -113,7 +113,7 @@ void externalSort(int fdInput, uint64_t size, int fdOutput, uint64_t memSize) {
 
         uint maxWriteBufferSize = memSize / sizeof(uint64_t) - k;
 
-        vector<uint64_t> writeBuffer();
+        vector<uint64_t> writeBuffer;
 
         // Merge by dumping smallest number into file and reloading data if necessary
         while (segments.size() > 0) {
@@ -136,10 +136,10 @@ void externalSort(int fdInput, uint64_t size, int fdOutput, uint64_t memSize) {
                     cout << "Error writing to output file" << endl;
                     for (int f = 0; f <= partitionNumber; f++) {
                         close(tmpFds[f]);
-                    }
-                    sprintf(filename, ".tmpPart%i", i);
-                    if (remove(filename) != 0) {
-                        cout << "Error deleting tmp file." << endl;
+                        sprintf(filename, ".tmpPart%i", f);
+                        if (remove(filename) != 0) {
+                            cout << "Error deleting tmp file." << endl;
+                        }
                     }
 
                     return;
