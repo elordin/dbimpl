@@ -1,6 +1,6 @@
 #pragma once
 
-#include<HashTable.hpp>
+#include <HashTable.hpp>
 
 HashTable::HashTable(int tableLength)
 {

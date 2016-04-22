@@ -1,8 +1,8 @@
 #pragma once
 
 #include <cstdint>
-#include <Linked_List.h>
-#include <BufferFrame.hpp>
+#include <Linked_List>
+#include "BufferFrame.hpp"
 
 class HashTable {
 	

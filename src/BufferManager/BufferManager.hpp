@@ -3,7 +3,7 @@
 #include <cstdint>
 
 #include "BufferFrame.hpp"
-#include "Hashtable.hpp"
+#include "HashTable.hpp"
 
 #define PAGESIZE 8192
 
