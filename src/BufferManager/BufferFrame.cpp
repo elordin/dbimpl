@@ -2,11 +2,14 @@
 
 #include "BufferFrame.hpp"
 
+using namespace std;
+
 uint64_t BufferFrame::countPages = 0;
 
 //TODO: control if the page number rises
 BufferFrame::BufferFrame(void* dataForFrame){
 	pageNo = ++countPages;
+	locked = false;
 	data = dataForFrame;
 }
 

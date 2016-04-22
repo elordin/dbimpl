@@ -2,6 +2,8 @@
 
 #include "BufferManager.hpp"
 
+using namespace std;
+
 BufferManager::BufferManager(uint pageCount){
 	//TODO: static value?	
 	table = new HashTable(128);

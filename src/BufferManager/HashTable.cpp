@@ -1,13 +1,14 @@
-#pragma once
-
+#include <iostream>
 #include "HashTable.hpp"
 
-HashTable::HashTable(int tableLength)
+using namespace std;
+
+HashTable::HashTable()
 {
-    	if (tableLength <= 0) 
-		tableLength = 128;
-    	array = new LinkedList[tableLength];
-    	length = tableLength;
+	unordered_map<uint64_t,BufferFrame*> ht;
+	hashtable = ht;
+	//TODO: not static	
+	length = 128;
 }
 
 int HashTable::hash(uint64_t key)
@@ -17,27 +18,30 @@ int HashTable::hash(uint64_t key)
 
 void HashTable::insertItem(BufferFrame* newItem)
 {
-    	int i = hash(newItem.getPageNo());
-    	if(!array[i].insertItem(newItem)){
-		cout << "Item could not be inserted!" << endl;
-	}
+    	int i = hash(newItem -> getPageNo());
+    	hashtable.emplace(i, newItem);
+	//TODO: error message: cout << "Item could not be inserted!" << endl;
 }
 
 void HashTable::removeItem(uint64_t key)
 {
     	int i = hash(key);
-    	if(!array[i].removeItem(key)){
-		cout << "Item could not be removed!" << endl;
-	}
+    	hashtable.erase(i);
+	//TODO: error message: cout << "Item could not be removed!" << endl;
 }
 
 BufferFrame* HashTable::getItemByKey(uint64_t key)
 {
     	int i = hash(key);
-    	return array[i].getItem(key);
+    	return hashtable[i];
 }
 
 HashTable::~HashTable()
 {
-    	delete [] array;
+    	//TODO: Destructor
 }
+
+int main(){
+
+}
+

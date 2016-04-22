@@ -1,11 +1,12 @@
 #pragma once
 
+#include <stdint.h>
 #include "HashTable.hpp"
 
 class BufferFrame {
     private:
 	uint64_t pageNo;
-	bool locked = false;
+	bool locked;
 	void* data;
 
 	static uint64_t countPages;
