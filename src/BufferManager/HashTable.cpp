@@ -1,6 +1,6 @@
 #pragma once
 
-#include<HashTable.hpp>
+#include "HashTable.hpp"
 
 HashTable::HashTable(int tableLength)
 {
@@ -17,7 +17,7 @@ int HashTable::hash(uint64_t key)
 
 void HashTable::insertItem(BufferFrame* newItem)
 {
-    	int i = hash(newItem -> key);
+    	int i = hash(newItem.getPageNo());
     	if(!array[i].insertItem(newItem)){
 		cout << "Item could not be inserted!" << endl;
 	}

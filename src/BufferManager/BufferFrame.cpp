@@ -1,8 +1,8 @@
 #pragma once
 
-#include <BufferFrame.hpp>
+#include "BufferFrame.hpp"
 
-int BufferFrame::countPages = 0;
+uint64_t BufferFrame::countPages = 0;
 
 //TODO: control if the page number rises
 BufferFrame::BufferFrame(void* dataForFrame){
@@ -12,6 +12,10 @@ BufferFrame::BufferFrame(void* dataForFrame){
 
 void* BufferFrame::getData(){
 	return data;
+}
+
+void writeBackChanges(){
+	insertItem(this);
 }
 
 //TODO: Müssen wir da noch was anderes freigeben?
