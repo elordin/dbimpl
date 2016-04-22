@@ -21,12 +21,20 @@ class BufferFrame {
     static uint64_t countPages;
 
  public:
-    BufferFrame(void* dataForFrame);
+    BufferFrame(void* data);
+
+    /**
+     *  Constructor
+     *  Allocates PAGESIZE memory for this page
+     */
     BufferFrame();
 
+    /** Getter method */
     void* getData();
-    void writeBackChanges();
+
+    /** Getter method */
     uint64_t getPageNo();
 
+    void writeBackChanges();
     ~BufferFrame();
 };

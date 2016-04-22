@@ -11,6 +11,10 @@ class BufferManager {
     int framesInMemory;
 
  public:
+    /**
+     *  Constructor
+     *  pageCount is the max. number of pages held in memory
+     */
     BufferManager(uint pageCount);
 
     /**
@@ -29,6 +33,10 @@ class BufferManager {
     // https://github.com/ben-manes/caffeine/wiki/Efficiency
     int evict();
 
+    /**
+     *  States that the caller no longer needs the page in memory
+     *  Page can thus be evicted if necessary if no on else accesses it
+     */
     void unfixPage(BufferFrame& frame, bool isDirty);
 
     ~BufferManager();
