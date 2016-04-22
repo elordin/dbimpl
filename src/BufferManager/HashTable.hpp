@@ -1,29 +1,29 @@
 #pragma once
 
 #include <cstdint>
-#include <Linked_List>
+#include <unordered_map>
+
 #include "BufferFrame.hpp"
 
-class HashTable {
-	
-private:
-	LinkedList* array;
-	int length;
-	int hash(uint64_t key);
 
-public:
-    
-	//Constructor	
-	//TODO: length not static
-	HashTable(int tableLength = 128);
-    
-    	void insertItem(BufferFrame* newItem);
-    
-    	bool removeItem(uint64_t key);
-    
-    	BufferFrame* getItemByKey(uint64_t key);
-    
-    	// Destructor
-    	~HashTable();
+class HashTable {  
+    private:    
+        std::unordered_map<uint64_t, BufferFrame*> hashtable;
+        uint64_t length;
+
+    public:
+        //Constructor   
+        HashTable();
+
+        int hash(uint64_t key);
+        
+        void insertItem(BufferFrame* newItem);
+
+        void removeItem(uint64_t key);
+
+        BufferFrame* getItemByKey(uint64_t key);
+
+        // Destructor
+        ~HashTable();
 };
 
