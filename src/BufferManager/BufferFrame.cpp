@@ -1,5 +1,6 @@
+#include <string.h>
+#include <pthread.h>
 #include <cstdlib>
-
 #include "BufferFrame.hpp"
 
 using namespace std;
@@ -7,19 +8,22 @@ using namespace std;
 #define PAGESIZE 8192
 
 
-//TODO: control if the page number rises
-BufferFrame::BufferFrame(void* data)
-  : pageNo(++BufferFrame::countPages),
-    latch(false),
-    data(data) {
-    // Ensure data is PAGESIZE large
+BufferFrame::BufferFrame(uint64_t pageNo, void* data)
+  : pageNo(pageNo) {
+    this->data = malloc(PAGESIZE);
+    memcpy(this->data, data, PAGESIZE);
+    if (pthread_rwlock_init(this->latch, NULL)) {
+        throw "Could not initialize latch.";
+    }
 }
 
 
-BufferFrame::BufferFrame()
-  : pageNo(++BufferFrame::countPages),
-    latch(false) {
+BufferFrame::BufferFrame(uint64_t pageNo)
+  : pageNo(pageNo) {
     this->data = malloc(PAGESIZE);
+    if (pthread_rwlock_init(this->latch, NULL)) {
+        throw "Could not initialize latch.";
+    }
 }
 
 
@@ -28,16 +32,35 @@ uint64_t BufferFrame::getPageNo() {
 }
 
 
+int BufferFrame::getLSN() {
+    return this->LSN;
+}
+
+
+void BufferFrame::setLSN(int LSN) {
+    if (LSN <= this->LSN) {
+        throw "Can not lower the LSN.";
+    }
+    this->LSN = LSN;
+}
+
+
+FrameStatus BufferFrame::getState() {
+    return this->state;
+}
+
+
+void BufferFrame::setState(FrameStatus state) {
+    this->state = state;
+}
+
+
 void *BufferFrame::getData() {
     return this->data;
 }
 
 
-void writeBackChanges() {
-    // insertItem(this);
-}
-
-
-//TODO: Destructor
 BufferFrame::~BufferFrame() {
+    // Locks?
+    free(this->data);
 }

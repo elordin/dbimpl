@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <pthread.h>
 
 
 enum FrameStatus {
@@ -13,7 +14,7 @@ enum FrameStatus {
 class BufferFrame {
  private:
     const uint64_t pageNo;
-    bool latch;
+    pthread_rwlock_t* latch;
     int LSN;
     FrameStatus state;
     void* data;
@@ -21,19 +22,28 @@ class BufferFrame {
     static uint64_t countPages;
 
  public:
-    BufferFrame(void* data);
+    /**
+     *  Constructor for an existing page
+     */
+    BufferFrame(uint64_t pageNo, void* data);
 
     /**
-     *  Constructor
-     *  Allocates PAGESIZE memory for this page
+     *  Constructor for a new empty page
+     *  Allocates memory for this page
      */
-    BufferFrame();
+    BufferFrame(uint64_t pageNo);
 
-    /** Getter method */
-    void* getData();
-
-    /** Getter method */
     uint64_t getPageNo();
+
+    int getLSN();
+
+    void setLSN(int LSN);
+
+    FrameStatus getState();
+
+    void setState(FrameStatus state);
+
+    void* getData();
 
     void writeBackChanges();
     ~BufferFrame();
