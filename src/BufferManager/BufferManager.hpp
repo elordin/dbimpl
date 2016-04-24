@@ -56,7 +56,7 @@ class BufferManager {
      */
     void *load(uint64_t pageId);
 
-    char *getSegmentFilename(uint segmentId);
+    std::string getSegmentFilename(uint segmentId);
 
     uint getSegmentId(uint64_t pageId);
 

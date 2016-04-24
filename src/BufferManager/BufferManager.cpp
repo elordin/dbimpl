@@ -60,9 +60,9 @@ void *BufferManager::load(uint64_t pageId) {
         if (this->table->contains(pageId)) {
             throw "Page is already in memory.";
         }
-        char *filename = this->getSegmentFilename(this->getSegmentId(pageId));
+        std::string filename = this->getSegmentFilename(this->getSegmentId(pageId));
         int fd;
-        if ((fd = open(filename, O_RDONLY)) < 0) {
+        if ((fd = open(filename.c_str(), O_RDONLY)) < 0) {
             throw "Failed to open segment file.";
         }
 
@@ -93,10 +93,8 @@ void BufferManager::unfixPage(BufferFrame& frame, bool isDirty) {
 }
 
 
-char *BufferManager::getSegmentFilename(uint segmentId) {
-    char filename[16];
-    snprintf(filename, 16, "%u", segmentId);
-    return filename;
+std::string BufferManager::getSegmentFilename(uint segmentId) {
+    return std::to_string(segmentId);
 }
 
 
