@@ -20,6 +20,10 @@ BufferFrame& BufferManager::fixPage(uint64_t pageId, bool exclusive) {
         this->load(pageId);
     }
     this->lock(pageId, exclusive);
+
+    this->lru_list.remove(pageId);
+    this->lru_list.push_back(pageId);
+
     return this->table->get(pageId);
 }
 
