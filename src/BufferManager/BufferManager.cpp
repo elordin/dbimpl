@@ -2,6 +2,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+
 #include "BufferManager.hpp"
 #include "BufferFrame.hpp"
 #include "HashTable.hpp"
@@ -13,11 +14,13 @@
 
 using namespace std;
 
+
 BufferManager::BufferManager(uint pageCount)
   : table(new HashTable()),
     pageCount(pageCount),
     framesInMemory(pageCount) {
 }
+
 
 BufferFrame& BufferManager::fixPage(uint64_t pageId, bool exclusive) {
     if (!this->table->contains(pageId)) {
@@ -31,9 +34,22 @@ BufferFrame& BufferManager::fixPage(uint64_t pageId, bool exclusive) {
     return this->table->get(pageId);
 }
 
+
 void BufferManager::lock(uint64_t pageId, bool exclusive) {
     // TODO
 }
+
+
+bool hasXLocks(uint64_t pageId) {
+    // TODO
+    return true;
+}
+
+bool hasSLocks(uint64_t pageId) {
+    // TODO
+    return false;
+}
+
 
 int BufferManager::evict() {
     for (std::list<uint64_t>::iterator pageIdPtr = this->lru_list.begin();
@@ -50,6 +66,7 @@ int BufferManager::evict() {
     }
     return -1;
 }
+
 
 void *BufferManager::load(uint64_t pageId) {
     if (this->table->size() < this->getPageCount()) {
@@ -97,13 +114,14 @@ void BufferManager::write(uint64_t pageId) {
 
 
 void BufferManager::unfixPage(BufferFrame& frame, bool isDirty) {
+    // TODO
     // Release one lock.
             // Can only be a single write or multiple read locks. Write is removed, read is decreased.
-    // If no one uses the page anymore
+    if (!this->hasXLocks(frame.getPageNo()) && !this->hasSLocks(frame.getPageNo())) {
         if (isDirty) {
-            // Write changes to disc
+            // Write changes to disc eventually
         }
-        // Flag for eviction
+    }
 }
 
 
@@ -125,6 +143,5 @@ off_t getPageOffset(uint64_t pageId) {
 
 
 BufferManager::~BufferManager() {
-    // TODO Delete all buffer frames
-    // TODO Delete hash table
+    // TODO Delete hash table, deleting all buffer frames and in-memory pages
 }
