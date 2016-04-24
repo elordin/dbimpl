@@ -20,6 +20,11 @@ class HashTable {
      */
     bool contains(uint64_t);
 
+    BufferFrame* get(uint64_t);
+
+    BufferFrame* operator[] (uint64_t);
+    void operator+ (BufferFrame);
+
     int hash(uint64_t key);
 
     void insertItem(BufferFrame* newItem);

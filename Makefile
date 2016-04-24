@@ -1,7 +1,7 @@
 # set compiler flags and misc
 CC = g++
 
-# CFLAGS = -std=c++11 -Wall -Wextra -Werror -isystem $(GTEST_DIR)/include -pedantic -O3
+# CFLAGS = -std=c++11 -Wall -Wextra -Werror -pedantic -O3
 CFLAGS = -std=c++11 -Wall -Wextra -pedantic -O0
 TFLAGS = -g -pthread -DTEST
 

@@ -10,8 +10,10 @@ using namespace std;
 
 BufferFrame::BufferFrame(uint64_t pageNo, void* data)
   : pageNo(pageNo) {
+    // TODO If someone else ensures the datablock at *data is PAGESIZE large, we can just reference
     this->data = malloc(PAGESIZE);
     memcpy(this->data, data, PAGESIZE);
+    
     if (pthread_rwlock_init(this->latch, NULL)) {
         throw "Could not initialize latch.";
     }

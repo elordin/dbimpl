@@ -13,15 +13,17 @@ BufferManager::BufferManager(uint pageCount)
 BufferFrame& BufferManager::fixPage(uint64_t pageId, bool exclusive) {
     if (this->table->contains(pageId)) {  // If page is in memory
         if (exclusive) {
-            // If no one else has locks
-                // Allow
-            // If others have locks
-                // Resolve
+            if (this->hasXLocks(pageId) || this->hasSLocks(pageId)) {
+                // Block until locks are released
+            }
+            // Set X Lock
+            this->table[pageId]; 
         } else {
-            // If only other non-exclusive locks
-                // Allow
-            // If exclusively locked
-                // Resolve
+            if (this->hasXLocks(pageId)) {
+                // Block until locks are released
+            }
+            // Set S Lock
+            // return this->table[pageId];
         }
     } else {  // If page is not in memory
         // Load page into memory
@@ -29,6 +31,29 @@ BufferFrame& BufferManager::fixPage(uint64_t pageId, bool exclusive) {
             // Fail by throwning an exception
     }
     // Set locks
+}
+
+int BufferManager::evict() {
+    for (std::list<uint64_t>::iterator pageIdPtr = this->lru_list.begin(); pageIdPtr != this->lru_list.end(); pageIdPtr++) {
+        uint64_t pageId = *pageIdPtr;
+        if (!this->hasXLocks(pageId) && !this->hasSLocks(pageId)) {
+            BufferFrame* frame = this->table->get(pageId);
+            this->table->removeItem(pageId);
+            this->lru_list.remove(pageId);
+            delete frame;
+            return 0;
+        }
+    }
+    return -1;
+}
+
+void *BufferManager::load(uint64_t pageId) {
+    // If memory is full 
+        // Try to evict 
+        // If eviction is not possible 
+            // Block or throw ?
+    // If memory is not full
+        // Load from disc
 }
 
 void BufferManager::unfixPage(BufferFrame& frame, bool isDirty) {
