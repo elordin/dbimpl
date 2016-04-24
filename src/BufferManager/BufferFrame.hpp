@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <pthread.h>
 
+#define PAGESIZE 8192
 
 enum FrameStatus {
     NEW   = 0x01,

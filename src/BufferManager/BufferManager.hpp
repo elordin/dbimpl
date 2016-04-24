@@ -9,9 +9,11 @@
 class BufferManager {
  private:
     HashTable* table;
-    
+
     // List ordered by recency of usage, LRU at the end.
     std::list<uint64_t> lru_list;
+    uint pageCount;
+
     // TODO What is this for?
     int framesInMemory;
 
@@ -45,12 +47,20 @@ class BufferManager {
     void unfixPage(BufferFrame& frame, bool isDirty);
 
     ~BufferManager();
-    
+
     bool hasXLocks(uint64_t pageId);
     bool hasSLocks(uint64_t pageId);
-    
+
     /**
      *  Loads page from disc into memory.
      */
     void *load(uint64_t pageId);
+
+    char *getSegmentFilename(uint segmentId);
+
+    uint getSegmentId(uint64_t pageId);
+
+    off_t getPageOffset (uint64_t pageId);
+
+    uint getPageCount();
 };

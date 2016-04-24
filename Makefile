@@ -2,7 +2,7 @@
 CC = g++
 
 # CFLAGS = -std=c++11 -Wall -Wextra -Werror -pedantic -O3
-CFLAGS = -std=c++11 -Wall -Wextra -pedantic -O0
+CFLAGS = -std=c++11 -O0 # -Wall -Wextra -pedantic
 TFLAGS = -g -pthread -DTEST
 
 LFLAGS =

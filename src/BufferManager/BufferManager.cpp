@@ -1,3 +1,7 @@
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include "BufferManager.hpp"
 #include "BufferFrame.hpp"
 #include "HashTable.hpp"
@@ -7,6 +11,7 @@ using namespace std;
 
 BufferManager::BufferManager(uint pageCount)
   : table(new HashTable()),
+    pageCount(pageCount),
     framesInMemory(pageCount) {
 }
 
@@ -17,7 +22,7 @@ BufferFrame& BufferManager::fixPage(uint64_t pageId, bool exclusive) {
                 // Block until locks are released
             }
             // Set X Lock
-            this->table[pageId]; 
+            this->table[pageId];
         } else {
             if (this->hasXLocks(pageId)) {
                 // Block until locks are released
@@ -29,12 +34,14 @@ BufferFrame& BufferManager::fixPage(uint64_t pageId, bool exclusive) {
         // Load page into memory
         // If loading into memory fails 'cause no free space is available and no page can be evicted
             // Fail by throwning an exception
+        // Set locks
     }
-    // Set locks
 }
 
 int BufferManager::evict() {
-    for (std::list<uint64_t>::iterator pageIdPtr = this->lru_list.begin(); pageIdPtr != this->lru_list.end(); pageIdPtr++) {
+    for (std::list<uint64_t>::iterator pageIdPtr = this->lru_list.begin();
+            pageIdPtr != this->lru_list.end();
+            pageIdPtr++) {
         uint64_t pageId = *pageIdPtr;
         if (!this->hasXLocks(pageId) && !this->hasSLocks(pageId)) {
             BufferFrame* frame = this->table->get(pageId);
@@ -48,12 +55,31 @@ int BufferManager::evict() {
 }
 
 void *BufferManager::load(uint64_t pageId) {
-    // If memory is full 
-        // Try to evict 
-        // If eviction is not possible 
-            // Block or throw ?
-    // If memory is not full
-        // Load from disc
+    if (this->table->size() < this->getPageCount()) {
+        // TODO Prevent concurrent double loading of page
+        if (this->table->contains(pageId)) {
+            throw "Page is already in memory.";
+        }
+        char *filename = this->getSegmentFilename(this->getSegmentId(pageId));
+        int fd;
+        if ((fd = open(filename, O_RDONLY)) < 0) {
+            throw "Failed to open segment file.";
+        }
+
+        off_t offset = this->getPageOffset(pageId);
+        void *page = malloc(PAGESIZE);
+        if (pread(fd, page, PAGESIZE, offset) < 0) {
+            throw "Failed to load page.";
+        }
+        close(fd);
+        return page;
+    } else {
+        if (this->evict() == 0) {
+            return this->load(pageId);
+        } else {
+            throw "Failed to evict page. No free memory available.";
+        }
+    }
 }
 
 void BufferManager::unfixPage(BufferFrame& frame, bool isDirty) {
@@ -64,6 +90,13 @@ void BufferManager::unfixPage(BufferFrame& frame, bool isDirty) {
             // Write changes to disc
         }
         // Flag for eviction
+}
+
+
+char *BufferManager::getSegmentFilename(uint segmentId) {
+    char filename[16];
+    snprintf(filename, 16, "%u", segmentId);
+    return filename;
 }
 
 

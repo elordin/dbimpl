@@ -25,6 +25,8 @@ class HashTable {
     BufferFrame* operator[] (uint64_t);
     void operator+ (BufferFrame);
 
+    uint size();
+
     int hash(uint64_t key);
 
     void insertItem(BufferFrame* newItem);
