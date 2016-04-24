@@ -16,26 +16,15 @@ BufferManager::BufferManager(uint pageCount)
 }
 
 BufferFrame& BufferManager::fixPage(uint64_t pageId, bool exclusive) {
-    if (this->table->contains(pageId)) {  // If page is in memory
-        if (exclusive) {
-            if (this->hasXLocks(pageId) || this->hasSLocks(pageId)) {
-                // Block until locks are released
-            }
-            // Set X Lock
-            this->table[pageId];
-        } else {
-            if (this->hasXLocks(pageId)) {
-                // Block until locks are released
-            }
-            // Set S Lock
-            // return this->table[pageId];
-        }
-    } else {  // If page is not in memory
-        // Load page into memory
-        // If loading into memory fails 'cause no free space is available and no page can be evicted
-            // Fail by throwning an exception
-        // Set locks
+    if (!this->table->contains(pageId)) {
+        this->load(pageId);
     }
+    this->lock(pageId, exclusive);
+    return this->table->get(pageId);
+}
+
+void BufferManager::lock(uint64_t pageId, bool exclusive) {
+    // TODO
 }
 
 int BufferManager::evict() {
@@ -44,10 +33,10 @@ int BufferManager::evict() {
             pageIdPtr++) {
         uint64_t pageId = *pageIdPtr;
         if (!this->hasXLocks(pageId) && !this->hasSLocks(pageId)) {
-            BufferFrame *frame = this->table->get(pageId);
+            BufferFrame frame = this->table->get(pageId);
             this->table->removeItem(pageId);
             this->lru_list.remove(pageId);
-            delete frame;
+            delete &frame;
             return 0;
         }
     }
@@ -83,15 +72,15 @@ void *BufferManager::load(uint64_t pageId) {
 
 
 void BufferManager::write(uint64_t pageId) {
-    BufferFrame *frame = this->table->get(pageId);
-    if (frame->getState() == DIRTY) {
+    BufferFrame frame = this->table->get(pageId);
+    if (frame.getState() == DIRTY) {
         std::string filename = this->getSegmentFilename(this->getSegmentId(pageId));
         int fd;
         if ((fd = open(filename.c_str(), O_WRONLY)) < 0) {
             throw "Failed to open segment file.";
         }
         off_t offset = this->getPageOffset(pageId);
-        if (pwrite(fd, frame->getData(), PAGESIZE, offset) < 0) {
+        if (pwrite(fd, frame.getData(), PAGESIZE, offset) < 0) {
             throw "Failed to write page to disc.";
         }
         close(fd);

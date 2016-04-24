@@ -20,9 +20,9 @@ class HashTable {
      */
     bool contains(uint64_t);
 
-    BufferFrame* get(uint64_t);
+    BufferFrame& get(uint64_t);
 
-    BufferFrame* operator[] (uint64_t);
+    BufferFrame& operator[] (uint64_t);
     void operator+ (BufferFrame);
 
     uint size();

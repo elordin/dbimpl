@@ -61,6 +61,12 @@ class BufferManager {
     bool hasSLocks(uint64_t pageId);
 
     /**
+     *  Sets S or X lock on a given page.
+     *  Blocks until lock can be set.
+     */
+    void lock(uint64_t pageId, bool exclusive);
+
+    /**
      *  Loads page from disc into memory.
      */
     void *load(uint64_t pageId);
