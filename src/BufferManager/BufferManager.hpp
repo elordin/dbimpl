@@ -12,6 +12,8 @@ class BufferManager {
 
     // List ordered by recency of usage, LRU at the end.
     std::list<uint64_t> lru_list;
+    
+    // Max number of pages.
     uint pageCount;
 
     // TODO What is this for?
@@ -48,7 +50,14 @@ class BufferManager {
 
     ~BufferManager();
 
+    /**
+     *  Returns whether the given page is currently locked exclusively.
+     */
     bool hasXLocks(uint64_t pageId);
+    
+    /** 
+     *  Returns whether the given page is currently locked shared.
+     */
     bool hasSLocks(uint64_t pageId);
 
     /**
@@ -56,10 +65,24 @@ class BufferManager {
      */
     void *load(uint64_t pageId);
 
+    /**
+     *  Writes page to disc.
+     */
+    void write(uint64_t pageId);
+
+    /**
+     *  Resolves file name for given segment.
+     */
     std::string getSegmentFilename(uint segmentId);
 
+    /**
+     *  Returns what segment a given page is in.
+     */
     uint getSegmentId(uint64_t pageId);
 
+    /**
+     *  Returns offset of given page within its segment.
+     */
     off_t getPageOffset (uint64_t pageId);
 
     uint getPageCount();

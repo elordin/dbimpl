@@ -44,7 +44,7 @@ int BufferManager::evict() {
             pageIdPtr++) {
         uint64_t pageId = *pageIdPtr;
         if (!this->hasXLocks(pageId) && !this->hasSLocks(pageId)) {
-            BufferFrame* frame = this->table->get(pageId);
+            BufferFrame *frame = this->table->get(pageId);
             this->table->removeItem(pageId);
             this->lru_list.remove(pageId);
             delete frame;
@@ -65,7 +65,6 @@ void *BufferManager::load(uint64_t pageId) {
         if ((fd = open(filename.c_str(), O_RDONLY)) < 0) {
             throw "Failed to open segment file.";
         }
-
         off_t offset = this->getPageOffset(pageId);
         void *page = malloc(PAGESIZE);
         if (pread(fd, page, PAGESIZE, offset) < 0) {
@@ -81,6 +80,24 @@ void *BufferManager::load(uint64_t pageId) {
         }
     }
 }
+
+
+void BufferManager::write(uint64_t pageId) {
+    BufferFrame *frame = this->table->get(pageId);
+    if (frame->getState() == DIRTY) {
+        std::string filename = this->getSegmentFilename(this->getSegmentId(pageId));
+        int fd;
+        if ((fd = open(filename.c_str(), O_WRONLY)) < 0) {
+            throw "Failed to open segment file.";
+        }
+        off_t offset = this->getPageOffset(pageId);
+        if (pwrite(fd, frame->getData(), PAGESIZE, offset) < 0) {
+            throw "Failed to write page to disc.";
+        }
+        close(fd);
+    }
+}
+
 
 void BufferManager::unfixPage(BufferFrame& frame, bool isDirty) {
     // Release one lock.
