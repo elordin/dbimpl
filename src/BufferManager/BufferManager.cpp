@@ -6,6 +6,10 @@
 #include "BufferFrame.hpp"
 #include "HashTable.hpp"
 
+// TODO
+#define SEGMENT_PART_SIZE 32
+#define PAGE_PART_SIZE 32
+
 
 using namespace std;
 
@@ -108,7 +112,19 @@ std::string BufferManager::getSegmentFilename(uint segmentId) {
 }
 
 
+uint64_t getSegmentId(uint64_t pageId) {
+    // Extracts prefix of length SEGMENT_PART_SIZE from pageId by bitmask
+    return (pageId >> PAGE_PART_SIZE) & (2 << SEGMENT_PART_SIZE - 1);
+}
+
+
+off_t getPageOffset(uint64_t pageId) {
+    // Extracts suffix of length PAGE_PART_SIZE from pageId by bitmask
+    return (pageId & (2 << PAGE_PART_SIZE - 1)) * PAGESIZE;
+}
+
+
 BufferManager::~BufferManager() {
-    // Delete all buffer frames
-    // Delete hash table
+    // TODO Delete all buffer frames
+    // TODO Delete hash table
 }

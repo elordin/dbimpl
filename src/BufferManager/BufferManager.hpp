@@ -84,7 +84,7 @@ class BufferManager {
     /**
      *  Returns what segment a given page is in.
      */
-    uint getSegmentId(uint64_t pageId);
+    uint64_t getSegmentId(uint64_t pageId);
 
     /**
      *  Returns offset of given page within its segment.
