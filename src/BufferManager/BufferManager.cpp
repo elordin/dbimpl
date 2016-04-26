@@ -112,7 +112,7 @@ void BufferManager::write(uint64_t pageId) {
     BufferFrame frame = this->table->get(pageId);
     if (frame.getState() == DIRTY) {
         std::string filename = this->getSegmentFilename(this->getSegmentId(pageId));
-        int fd;
+        int fd;
 
         if ((fd = open(filename.c_str(), O_WRONLY)) < 0) {
             throw "Failed to open segment file.";
@@ -138,7 +138,7 @@ void BufferManager::unfixPage(BufferFrame& frame, bool isDirty) {
             // Can only be a single write or multiple read locks. Write is removed, read is decreased.
     if (!this->hasXLocks(frame.getPageNo()) && !this->hasSLocks(frame.getPageNo())) {
         if (isDirty) {
-            this->write(frame.getPageNo());
+            this->write(frame.getPageNo());
         }
     }
 }

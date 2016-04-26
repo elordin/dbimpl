@@ -5,6 +5,8 @@
 #include <assert.h>
 #include <pthread.h>
 
+#include "BufferManager/BufferManager.hpp"
+
 using namespace std;
 
 BufferManager* bm;

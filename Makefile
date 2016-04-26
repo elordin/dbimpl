@@ -2,8 +2,8 @@
 CC = g++
 
 # CFLAGS = -std=c++11 -Wall -Wextra -Werror -pedantic -O3
-CFLAGS = -std=c++11 -O0 # -Wall -Wextra -pedantic
-TFLAGS = -g -pthread -DTEST
+CFLAGS = -std=c++11 -O0 -pthread # -Wall -Wextra -pedantic
+TFLAGS = -g -DTEST
 
 LFLAGS =
 OUTNAME = main
@@ -13,7 +13,7 @@ OBJDIR = ./obj
 BINDIR = ./bin
 
 # file names
-FILES = sorting/mergesort.cpp BufferManager/BufferManager.cpp \
+FILES = BufferManager/BufferManager.cpp \
 		BufferManager/BufferFrame.cpp BufferManager/HashTable.cpp \
 		buffertest.cpp
 SRC = $(FILES:%=$(SRCDIR)/%)
