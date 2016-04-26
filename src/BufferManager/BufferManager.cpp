@@ -3,12 +3,14 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#include <mutex>
+
 #include "BufferManager.hpp"
 #include "BufferFrame.hpp"
 #include "HashTable.hpp"
 
 // TODO
-#define PAGE_PART_SIZE 32
+#define PAGE_PART_SIZE 48
 #define SEGMENT_PART_SIZE 8 * sizeof(uint64_t) - PAGE_PART_SIZE
 
 
@@ -17,38 +19,49 @@ using namespace std;
 
 BufferManager::BufferManager(uint pageCount)
   : table(new HashTable()),
-    pageCount(pageCount),
-    framesInMemory(pageCount) {
+    pageCount(pageCount) {
 }
 
 
-BufferFrame& BufferManager::fixPage(uint64_t pageId, bool exclusive) { // TODO Thread safety
+BufferFrame& BufferManager::fixPage(uint64_t pageId, bool exclusive) {
+    this->table->lockBucket(pageId);
     if (!this->table->contains(pageId)) {
-        this->load(pageId);
+        // Insert an empty frame and lock it exclusively while performing disc I/O
+        BufferFrame emptyFrame = BufferFrame(pageId);
+        emptyFrame.setState(CLEAN);
+        this->table->insert(pageId, emptyFrame);
+        emptyFrame.lock(true); // X-Lock
+
+        this->table->unlockBucket(pageId);
+
+        this->load(pageId, emptyFrame.getData());
+        emptyFrame.unlock();
+    } else {
+        this->table->unlockBucket(pageId);
     }
 
     BufferFrame& frame = this->table->get(pageId);
-    frame->lock(exclusive);
+    frame.lock(exclusive);
 
+    std::lock_guard<std::mutex> lock(this->lru_lock);
     this->lru_list.remove(pageId);
     this->lru_list.push_back(pageId);
 
-    return this->table->get(pageId);
+    return frame;
 }
 
 
-bool hasXLocks(uint64_t pageId) { // TODO Thread safety
-    // TODO
-    return true;
-}
-
-bool hasSLocks(uint64_t pageId) { // TODO Thread safety
-    // TODO
-    return false;
+void BufferManager::unfixPage(BufferFrame& frame, bool isDirty) {
+    if (frame.tryLock(true) == 0) {
+        this->write(frame);
+    }
+    frame.unlock();
 }
 
 
-int BufferManager::evict() { // TODO Thread safety
+int BufferManager::evict() {
+    std::lock_guard<std::mutex> lock(this->lru_lock);
+    /* TODO
     for (std::list<uint64_t>::iterator pageIdPtr = this->lru_list.begin();
             pageIdPtr != this->lru_list.end();
             pageIdPtr++) {
@@ -61,19 +74,15 @@ int BufferManager::evict() { // TODO Thread safety
             return 0;
         }
     }
+    */
     return -1;
 }
 
 
-void BufferManager::load(uint64_t pageId) { // TODO Thread safety
+void BufferManager::load(uint64_t pageId, void *destination) {
     if (this->table->size() < this->getPageCount()) {
-        // TODO Prevent concurrent double loading of page
-        if (this->table->contains(pageId)) {
-            throw "Page is already in memory.";
-        }
 
         std::string filename = this->getSegmentFilename(this->getSegmentId(pageId));
-
         int fd;
 
         if ((fd = open(filename.c_str(), O_CREAT | O_RDONLY)) < 0) {
@@ -81,7 +90,8 @@ void BufferManager::load(uint64_t pageId) { // TODO Thread safety
         }
 
         off_t offset = this->getPageOffset(pageId);
-        // Redundantly ensure sufficient space.
+
+        // Ensure sufficient space.
         if (posix_fallocate(fd, offset, PAGESIZE) != 0) {
             throw "Failed to allocate sufficient file space.";
         }
@@ -93,11 +103,9 @@ void BufferManager::load(uint64_t pageId) { // TODO Thread safety
         }
 
         close(fd);
-
-        this->table + new BufferFrame(pageId, page);
     } else {
         if (this->evict() == 0) {
-            this->load(pageId);
+            this->load(pageId, destination);
         } else {
             throw "Failed to evict page. No free memory available.";
         }
@@ -105,8 +113,12 @@ void BufferManager::load(uint64_t pageId) { // TODO Thread safety
 }
 
 
-void BufferManager::write(uint64_t pageId) { // TODO Thread safety
-    BufferFrame frame = this->table->get(pageId);
+void BufferManager::write(BufferFrame& frame) {
+    // Assumes at least read lock on the frame
+
+    // frame.lock(false); // S-Lock
+    uint64_t pageId = frame.getPageNo();
+
     if (frame.getState() == DIRTY) {
         std::string filename = this->getSegmentFilename(this->getSegmentId(pageId));
         int fd;
@@ -126,18 +138,8 @@ void BufferManager::write(uint64_t pageId) { // TODO Thread safety
         }
         close(fd);
     }
-}
 
-
-void BufferManager::unfixPage(BufferFrame& frame, bool isDirty) { // TODO Thread safety
-    // TODO
-    // Release one lock.
-            // Can only be a single write or multiple read locks. Write is removed, read is decreased.
-    if (!this->hasXLocks(frame.getPageNo()) && !this->hasSLocks(frame.getPageNo())) {
-        if (isDirty) {
-            this->write(frame.getPageNo());
-        }
-    }
+    // frame.unlock();
 }
 
 
@@ -154,7 +156,7 @@ uint64_t BufferManager::getSegmentId(uint64_t pageId) {
 
 off_t BufferManager::getPageOffset(uint64_t pageId) {
     // Extracts suffix of length PAGE_PART_SIZE from pageId by bitmask
-    return (pageId & (2 << PAGE_PART_SIZE - 1)) * PAGESIZE;
+    return (pageId & (2L << PAGE_PART_SIZE - 1)) * PAGESIZE;
 }
 
 

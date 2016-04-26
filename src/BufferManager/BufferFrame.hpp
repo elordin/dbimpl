@@ -34,10 +34,22 @@ class BufferFrame {
      */
     BufferFrame(uint64_t pageNo);
 
+    /**
+     *  Locks the BufferFrame using a pthread_rwlock
+     *  Blocks until lock could be aquired.
+     *  Uses write lock when exclusive is true, read lock otherwise.
+     */
     void lock(bool exclusive);
 
+    /**
+     *  Tries to get a lock on this BufferFrame.
+     *  Does not block, returns -1 if no lock could be aquired, 0 otherwise.
+     */
     int tryLock(bool exclusive);
 
+    /**
+     *  Releases one lock (read or write).
+     */
     void unlock();
 
     uint64_t getPageNo();
@@ -52,6 +64,5 @@ class BufferFrame {
 
     void* getData();
 
-    void writeBackChanges();
     ~BufferFrame();
 };

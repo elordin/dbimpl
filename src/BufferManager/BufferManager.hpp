@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <list>
+#include <mutex>
 
 #include "BufferFrame.hpp"
 #include "HashTable.hpp"
@@ -12,12 +13,10 @@ class BufferManager {
 
     // List ordered by recency of usage, LRU at the end.
     std::list<uint64_t> lru_list;
-    
+    std::mutex lru_lock;
+
     // Max number of pages.
     uint pageCount;
-
-    // TODO What is this for?
-    int framesInMemory;
 
  public:
     /**
@@ -35,6 +34,12 @@ class BufferManager {
     BufferFrame& fixPage(uint64_t pageId, bool exclusive);
 
     /**
+     *  States that the caller no longer needs the page in memory
+     *  Page can thus be evicted if necessary if no on else accesses it
+     */
+    void unfixPage(BufferFrame& frame, bool isDirty);
+
+    /**
      *  Evicts the next page according to eviction strategy.
      *  Returns 0 on success, -1 on error.
      */
@@ -42,39 +47,17 @@ class BufferManager {
     // https://github.com/ben-manes/caffeine/wiki/Efficiency
     int evict();
 
-    /**
-     *  States that the caller no longer needs the page in memory
-     *  Page can thus be evicted if necessary if no on else accesses it
-     */
-    void unfixPage(BufferFrame& frame, bool isDirty);
-
     ~BufferManager();
 
     /**
-     *  Returns whether the given page is currently locked exclusively.
+     *  Loads page from disc to position in memory.
      */
-    bool hasXLocks(uint64_t pageId);
-    
-    /** 
-     *  Returns whether the given page is currently locked shared.
-     */
-    bool hasSLocks(uint64_t pageId);
-
-    /**
-     *  Sets S or X lock on a given page.
-     *  Blocks until lock can be set.
-     */
-    void lock(uint64_t pageId, bool exclusive);
-
-    /**
-     *  Loads page from disc into memory.
-     */
-    void *load(uint64_t pageId);
+    void load(uint64_t pageId, void *destination);
 
     /**
      *  Writes page to disc.
      */
-    void write(uint64_t pageId);
+    void write(BufferFrame& frame);
 
     /**
      *  Resolves file name for given segment.

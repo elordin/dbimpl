@@ -7,7 +7,9 @@ using namespace std;
 
 
 BufferFrame::BufferFrame(uint64_t pageNo, void* data)
-  : pageNo(pageNo) {
+  : pageNo(pageNo),
+    LSN(0),
+    state(CLEAN) {
     // Ensures the data-block PAGESIZE large
     this->data = realloc(data, PAGESIZE);
 
@@ -18,7 +20,9 @@ BufferFrame::BufferFrame(uint64_t pageNo, void* data)
 
 
 BufferFrame::BufferFrame(uint64_t pageNo)
-  : pageNo(pageNo) {
+  : pageNo(pageNo),
+    LSN(0),
+    state(NEW) {
     this->data = malloc(PAGESIZE);
     if (pthread_rwlock_init(this->latch, NULL)) {
         throw "Could not initialize latch.";

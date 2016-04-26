@@ -15,6 +15,12 @@ class HashTable {
     // Constructor
     HashTable();
 
+    void lockBucket(uint64_t pageId);
+    void unlockBucket(uint64_t pageId);
+
+    void lockTable();
+    void unlockTable();
+
     /**
      *  Returns whether a given key is in the hash table
      */
@@ -22,8 +28,8 @@ class HashTable {
 
     BufferFrame& get(uint64_t); // TODO Thread safety
 
-    BufferFrame& operator[] (uint64_t); // TODO Thread safety
-    void operator+ (BufferFrame); // TODO Thread safety
+    void insert(uint64_t, const BufferFrame&);
+    void remove(uint64_t);
 
     uint size(); // TODO Thread safety
 
