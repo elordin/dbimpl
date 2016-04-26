@@ -22,11 +22,13 @@ BufferManager::BufferManager(uint pageCount)
 }
 
 
-BufferFrame& BufferManager::fixPage(uint64_t pageId, bool exclusive) {
+BufferFrame& BufferManager::fixPage(uint64_t pageId, bool exclusive) { // TODO Thread safety
     if (!this->table->contains(pageId)) {
         this->load(pageId);
     }
-    this->lock(pageId, exclusive);
+
+    BufferFrame& frame = this->table->get(pageId);
+    frame->lock(exclusive);
 
     this->lru_list.remove(pageId);
     this->lru_list.push_back(pageId);
@@ -35,23 +37,18 @@ BufferFrame& BufferManager::fixPage(uint64_t pageId, bool exclusive) {
 }
 
 
-void BufferManager::lock(uint64_t pageId, bool exclusive) {
-    // TODO
-}
-
-
-bool hasXLocks(uint64_t pageId) {
+bool hasXLocks(uint64_t pageId) { // TODO Thread safety
     // TODO
     return true;
 }
 
-bool hasSLocks(uint64_t pageId) {
+bool hasSLocks(uint64_t pageId) { // TODO Thread safety
     // TODO
     return false;
 }
 
 
-int BufferManager::evict() {
+int BufferManager::evict() { // TODO Thread safety
     for (std::list<uint64_t>::iterator pageIdPtr = this->lru_list.begin();
             pageIdPtr != this->lru_list.end();
             pageIdPtr++) {
@@ -68,7 +65,7 @@ int BufferManager::evict() {
 }
 
 
-void *BufferManager::load(uint64_t pageId) {
+void BufferManager::load(uint64_t pageId) { // TODO Thread safety
     if (this->table->size() < this->getPageCount()) {
         // TODO Prevent concurrent double loading of page
         if (this->table->contains(pageId)) {
@@ -97,10 +94,10 @@ void *BufferManager::load(uint64_t pageId) {
 
         close(fd);
 
-        return page;
+        this->table + new BufferFrame(pageId, page);
     } else {
         if (this->evict() == 0) {
-            return this->load(pageId);
+            this->load(pageId);
         } else {
             throw "Failed to evict page. No free memory available.";
         }
@@ -108,7 +105,7 @@ void *BufferManager::load(uint64_t pageId) {
 }
 
 
-void BufferManager::write(uint64_t pageId) {
+void BufferManager::write(uint64_t pageId) { // TODO Thread safety
     BufferFrame frame = this->table->get(pageId);
     if (frame.getState() == DIRTY) {
         std::string filename = this->getSegmentFilename(this->getSegmentId(pageId));
@@ -132,7 +129,7 @@ void BufferManager::write(uint64_t pageId) {
 }
 
 
-void BufferManager::unfixPage(BufferFrame& frame, bool isDirty) {
+void BufferManager::unfixPage(BufferFrame& frame, bool isDirty) { // TODO Thread safety
     // TODO
     // Release one lock.
             // Can only be a single write or multiple read locks. Write is removed, read is decreased.

@@ -34,6 +34,12 @@ class BufferFrame {
      */
     BufferFrame(uint64_t pageNo);
 
+    void lock(bool exclusive);
+
+    int tryLock(bool exclusive);
+
+    void unlock();
+
     uint64_t getPageNo();
 
     int getLSN();

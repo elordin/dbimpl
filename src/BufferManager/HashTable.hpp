@@ -18,14 +18,14 @@ class HashTable {
     /**
      *  Returns whether a given key is in the hash table
      */
-    bool contains(uint64_t);
+    bool contains(uint64_t); // TODO Thread safety
 
-    BufferFrame& get(uint64_t);
+    BufferFrame& get(uint64_t); // TODO Thread safety
 
-    BufferFrame& operator[] (uint64_t);
-    void operator+ (BufferFrame);
+    BufferFrame& operator[] (uint64_t); // TODO Thread safety
+    void operator+ (BufferFrame); // TODO Thread safety
 
-    uint size();
+    uint size(); // TODO Thread safety
 
     int hash(uint64_t key);
 
