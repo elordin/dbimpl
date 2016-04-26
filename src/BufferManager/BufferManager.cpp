@@ -8,8 +8,8 @@
 #include "HashTable.hpp"
 
 // TODO
-#define SEGMENT_PART_SIZE 32
 #define PAGE_PART_SIZE 32
+#define SEGMENT_PART_SIZE 8 * sizeof(uint64_t) - PAGE_PART_SIZE
 
 
 using namespace std;
@@ -74,17 +74,29 @@ void *BufferManager::load(uint64_t pageId) {
         if (this->table->contains(pageId)) {
             throw "Page is already in memory.";
         }
+
         std::string filename = this->getSegmentFilename(this->getSegmentId(pageId));
+
         int fd;
-        if ((fd = open(filename.c_str(), O_RDONLY)) < 0) {
+
+        if ((fd = open(filename.c_str(), O_CREAT | O_RDONLY)) < 0) {
             throw "Failed to open segment file.";
         }
+
         off_t offset = this->getPageOffset(pageId);
+        // Redundantly ensure sufficient space.
+        if (posix_fallocate(fd, offset, PAGESIZE) != 0) {
+            throw "Failed to allocate sufficient file space.";
+        }
+
         void *page = malloc(PAGESIZE);
+
         if (pread(fd, page, PAGESIZE, offset) < 0) {
             throw "Failed to load page.";
         }
+
         close(fd);
+
         return page;
     } else {
         if (this->evict() == 0) {
@@ -100,11 +112,18 @@ void BufferManager::write(uint64_t pageId) {
     BufferFrame frame = this->table->get(pageId);
     if (frame.getState() == DIRTY) {
         std::string filename = this->getSegmentFilename(this->getSegmentId(pageId));
-        int fd;
+        int fd;
+
         if ((fd = open(filename.c_str(), O_WRONLY)) < 0) {
             throw "Failed to open segment file.";
         }
+
         off_t offset = this->getPageOffset(pageId);
+
+        if (posix_fallocate(fd, offset, PAGESIZE) != 0) {
+            throw "Failed to allocate sufficient file space.";
+        }
+
         if (pwrite(fd, frame.getData(), PAGESIZE, offset) < 0) {
             throw "Failed to write page to disc.";
         }
@@ -119,7 +138,7 @@ void BufferManager::unfixPage(BufferFrame& frame, bool isDirty) {
             // Can only be a single write or multiple read locks. Write is removed, read is decreased.
     if (!this->hasXLocks(frame.getPageNo()) && !this->hasSLocks(frame.getPageNo())) {
         if (isDirty) {
-            // Write changes to disc eventually
+            this->write(frame.getPageNo());
         }
     }
 }
@@ -130,13 +149,13 @@ std::string BufferManager::getSegmentFilename(uint segmentId) {
 }
 
 
-uint64_t getSegmentId(uint64_t pageId) {
+uint64_t BufferManager::getSegmentId(uint64_t pageId) {
     // Extracts prefix of length SEGMENT_PART_SIZE from pageId by bitmask
     return (pageId >> PAGE_PART_SIZE) & (2 << SEGMENT_PART_SIZE - 1);
 }
 
 
-off_t getPageOffset(uint64_t pageId) {
+off_t BufferManager::getPageOffset(uint64_t pageId) {
     // Extracts suffix of length PAGE_PART_SIZE from pageId by bitmask
     return (pageId & (2 << PAGE_PART_SIZE - 1)) * PAGESIZE;
 }

@@ -14,7 +14,8 @@ BINDIR = ./bin
 
 # file names
 FILES = sorting/mergesort.cpp BufferManager/BufferManager.cpp \
-		BufferManager/BufferFrame.cpp BufferManager/HashTable.cpp
+		BufferManager/BufferFrame.cpp BufferManager/HashTable.cpp \
+		buffertest.cpp
 SRC = $(FILES:%=$(SRCDIR)/%)
 OBJ = $(FILES:%.cpp=$(OBJDIR)/%.o)
 
