@@ -9,16 +9,19 @@
 class HashTable {
  private:
     std::unordered_map<uint64_t, BufferFrame*> hashtable;
-    uint64_t length;
+
+    std::mutex global_mutex;
 
  public:
     // Constructor
     HashTable();
 
-    void lockBucket(uint64_t pageId);
-    void unlockBucket(uint64_t pageId);
+    void lockBucket(uint64_t key);
+
+    void unlockBucket(uint64_t key);
 
     void lockTable();
+
     void unlockTable();
 
     /**
@@ -29,19 +32,11 @@ class HashTable {
     BufferFrame& get(uint64_t); // TODO Thread safety
 
     void insert(uint64_t, const BufferFrame&);
+
     void remove(uint64_t);
 
     uint size(); // TODO Thread safety
 
-    int hash(uint64_t key);
-
-    void insertItem(BufferFrame* newItem);
-
-    void removeItem(uint64_t key);
-
-    BufferFrame* getItemByKey(uint64_t key);
-
-    // Destructor
     ~HashTable();
 };
 

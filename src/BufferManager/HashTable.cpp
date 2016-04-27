@@ -6,36 +6,66 @@
 using namespace std;
 
 
-HashTable::HashTable() {
-    unordered_map<uint64_t, BufferFrame*> ht;
-    hashtable = ht;
-    //TODO: not static
-    length = 128;
+HashTable::HashTable() {}
+
+
+void lockBucket(uint64_t key) {
+    // TODO
 }
 
-int HashTable::hash(uint64_t key) {
-    return key % length;
+
+void unlockBucket(uint64_t key) {
+    // TODO
 }
 
-void HashTable::insertItem(BufferFrame* newItem) {
-    int i = hash(newItem -> getPageNo());
-    hashtable.emplace(i, newItem);
-    //TODO: error message: cout << "Item could not be inserted!" << endl;
+
+void lockTable() {
+    this->global_mutex.lock();
 }
 
-void HashTable::removeItem(uint64_t key) {
-    int i = hash(key);
-    hashtable.erase(i);
-    //TODO: error message: cout << "Item could not be removed!" << endl;
+
+void unlockTable() {
+    this->global_mutex.unlock();
 }
 
-BufferFrame* HashTable::getItemByKey(uint64_t key) {
-    int i = hash(key);
-    return hashtable[i];
+
+bool contains(uint64_t key) {
+    this->lockTable();
+    bool contains = this->table.count(key) == 1;
+    this->unlockTable();
+    return contains;
 }
+
+
+BufferFrame& HashTable::get(uint64_t key) {
+    return hashtable.at(key);
+}
+
+
+void HashTable::insert(uint64_t key, BufferFrame value) {
+    this->lockBucket(key);
+    hashtable.emplace(key, value);
+    this->unlockBucket(key);
+}
+
+
+void HashTable::remove(uint64_t key) {
+    this->lockBucket(key);
+    hashtable.erase(key);
+    this->unlockBucket(key);
+}
+
+
+uint size() {
+    this->lockTable();
+    uint size = this->table.size(); // Count entries
+    this->unlockTable();
+    return size;
+}
+
 
 HashTable::~HashTable() {
-        //TODO: Destructor
+    // TODO Delete all frames.
 }
 
 

@@ -9,7 +9,6 @@
 #include "BufferFrame.hpp"
 #include "HashTable.hpp"
 
-// TODO
 #define PAGE_PART_SIZE 48
 #define SEGMENT_PART_SIZE 8 * sizeof(uint64_t) - PAGE_PART_SIZE
 
@@ -34,12 +33,14 @@ BufferFrame& BufferManager::fixPage(uint64_t pageId, bool exclusive) {
 
         this->table->unlockBucket(pageId);
 
+        // Load from disc (slow I/O), only the single frame is locked.
         this->load(pageId, emptyFrame.getData());
         emptyFrame.unlock();
     } else {
         this->table->unlockBucket(pageId);
     }
 
+    // ??? Could the page get evicted before this get is called?
     BufferFrame& frame = this->table->get(pageId);
     frame.lock(exclusive);
 
@@ -52,30 +53,28 @@ BufferFrame& BufferManager::fixPage(uint64_t pageId, bool exclusive) {
 
 
 void BufferManager::unfixPage(BufferFrame& frame, bool isDirty) {
-    if (frame.tryLock(true) == 0) {
-        this->write(frame);
-    }
+    // Return the one lock this thread held.
     frame.unlock();
+    // If then no one with locks is left and the page is dirty, write it to disc.
+    if (isDirty && frame.tryLock(true) == 0) {
+        this->write(frame);
+        frame.unlock();
+    }
 }
 
 
 int BufferManager::evict() {
     std::lock_guard<std::mutex> lock(this->lru_lock);
-    /* TODO
-    for (std::list<uint64_t>::iterator pageIdPtr = this->lru_list.begin();
-            pageIdPtr != this->lru_list.end();
-            pageIdPtr++) {
-        uint64_t pageId = *pageIdPtr;
-        if (!this->hasXLocks(pageId) && !this->hasSLocks(pageId)) {
-            BufferFrame frame = this->table->get(pageId);
-            this->table->removeItem(pageId);
-            this->lru_list.remove(pageId);
-            delete &frame;
-            return 0;
+    for ( each frame ) {
+        if (frame->tryLock(true) == 0) {
+            // Remove from table
+            // Remove from lru list
+            // delete frame;
+            return 0
         }
     }
-    */
     return -1;
+    // Implicit unlock of lru_lock at end of scope.
 }
 
 
@@ -89,8 +88,9 @@ void BufferManager::load(uint64_t pageId, void *destination) {
             throw "Failed to open segment file.";
         }
 
-        off_t offset = this->getPageOffset(pageId);
-
+        off_t offset = this->getPageOffset(pageId)
+        ;
+        // Load from disc (slow I/O), only the single frame is locked.
         // Ensure sufficient space.
         if (posix_fallocate(fd, offset, PAGESIZE) != 0) {
             throw "Failed to allocate sufficient file space.";
@@ -115,16 +115,17 @@ void BufferManager::load(uint64_t pageId, void *destination) {
 
 void BufferManager::write(BufferFrame& frame) {
     // Assumes at least read lock on the frame
-
     // frame.lock(false); // S-Lock
+
     uint64_t pageId = frame.getPageNo();
 
     if (frame.getState() == DIRTY) {
         std::string filename = this->getSegmentFilename(this->getSegmentId(pageId));
         int fd;
 
-        if ((fd = open(filename.c_str(), O_WRONLY)) < 0) {
-            throw "Failed to open segment file.";
+        if ((fd = open(filename.c_str(), O_WRONLY)) < 0)
+         {
+            thro        // Load from disc (slow I/O)w "Failed to open segment file.";, only the single frame is locked.
         }
 
         off_t offset = this->getPageOffset(pageId);
@@ -161,5 +162,5 @@ off_t BufferManager::getPageOffset(uint64_t pageId) {
 
 
 BufferManager::~BufferManager() {
-    // TODO Delete hash table, deleting all buffer frames and in-memory pages
+    delete this->table;
 }
