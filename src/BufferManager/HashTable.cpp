@@ -1,3 +1,4 @@
+#include <mutex>
 #include <iostream>
 #include <unordered_map>
 #include "BufferFrame.hpp"
@@ -9,36 +10,36 @@ using namespace std;
 HashTable::HashTable() {}
 
 
-void lockBucket(uint64_t key) {
+void HashTable::lockBucket(uint64_t key) {
     // TODO
 }
 
 
-void unlockBucket(uint64_t key) {
+void HashTable::unlockBucket(uint64_t key) {
     // TODO
 }
 
 
-void lockTable() {
+void HashTable::lockTable() {
     this->global_mutex.lock();
 }
 
 
-void unlockTable() {
+void HashTable::unlockTable() {
     this->global_mutex.unlock();
 }
 
 
-bool contains(uint64_t key) {
+bool HashTable::contains(uint64_t key) {
     this->lockTable();
-    bool contains = this->table.count(key) == 1;
+    bool contains = this->hashtable.count(key) == 1;
     this->unlockTable();
     return contains;
 }
 
 
 BufferFrame& HashTable::get(uint64_t key) {
-    return hashtable.at(key);
+    return this->hashtable.at(key);
 }
 
 
@@ -56,9 +57,9 @@ void HashTable::remove(uint64_t key) {
 }
 
 
-uint size() {
+uint HashTable::size() {
     this->lockTable();
-    uint size = this->table.size(); // Count entries
+    uint size = this->hashtable.size(); // Count entries
     this->unlockTable();
     return size;
 }

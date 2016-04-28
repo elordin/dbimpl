@@ -3,11 +3,15 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#include <iostream>
 #include <mutex>
+#include <cerrno>
+#include <cstdio>
 
 #include "BufferManager.hpp"
 #include "BufferFrame.hpp"
 #include "HashTable.hpp"
+
 
 #define PAGE_PART_SIZE 48
 #define SEGMENT_PART_SIZE 8 * sizeof(uint64_t) - PAGE_PART_SIZE
@@ -65,26 +69,27 @@ void BufferManager::unfixPage(BufferFrame& frame, bool isDirty) {
 
 int BufferManager::evict() {
     std::lock_guard<std::mutex> lock(this->lru_lock);
-    for ( each frame ) {
-        if (frame->tryLock(true) == 0) {
+    // for ( each frame ) {
+        // if (frame->tryLock(true) == 0) {
             // Remove from table
             // Remove from lru list
             // delete frame;
-            return 0
-        }
-    }
+            // return 0
+        // }
+    // }
     return -1;
     // Implicit unlock of lru_lock at end of scope.
 }
 
 
 void BufferManager::load(uint64_t pageId, void *destination) {
-    if (this->table->size() < this->getPageCount()) {
+    if (this->table->size() < this->pageCount) {
 
         std::string filename = this->getSegmentFilename(this->getSegmentId(pageId));
         int fd;
 
         if ((fd = open(filename.c_str(), O_CREAT | O_RDONLY)) < 0) {
+            std::cout << "Failed to open segment file" << std::endl;
             throw "Failed to open segment file.";
         }
 
@@ -93,12 +98,15 @@ void BufferManager::load(uint64_t pageId, void *destination) {
         // Load from disc (slow I/O), only the single frame is locked.
         // Ensure sufficient space.
         if (posix_fallocate(fd, offset, PAGESIZE) != 0) {
+            std::cout << "Failed to allocate sufficient file space." << std::endl;
+            perror("ERROR");
             throw "Failed to allocate sufficient file space.";
         }
 
         void *page = malloc(PAGESIZE);
 
         if (pread(fd, page, PAGESIZE, offset) < 0) {
+            std::cout << "Failed to load page." << std::endl;
             throw "Failed to load page.";
         }
 
@@ -107,7 +115,8 @@ void BufferManager::load(uint64_t pageId, void *destination) {
         if (this->evict() == 0) {
             this->load(pageId, destination);
         } else {
-            throw "Failed to evict page. No free memory available.";
+            std::cout << "Failed to evict page. No free memory available." << std::endl;
+			throw "Failed to evict page. No free memory available.";
         }
     }
 }
@@ -125,16 +134,19 @@ void BufferManager::write(BufferFrame& frame) {
 
         if ((fd = open(filename.c_str(), O_WRONLY)) < 0)
          {
-            thro        // Load from disc (slow I/O)w "Failed to open segment file.";, only the single frame is locked.
+            std::cout << "Failed to open segment file." << std::endl;
+            throw "Failed to open segment file.";
         }
 
         off_t offset = this->getPageOffset(pageId);
 
         if (posix_fallocate(fd, offset, PAGESIZE) != 0) {
+            std::cout << "Failed to allocate sufficient file space." << std::endl;
             throw "Failed to allocate sufficient file space.";
         }
 
         if (pwrite(fd, frame.getData(), PAGESIZE, offset) < 0) {
+            std::cout << "Failed to write page to disc." << std::endl;
             throw "Failed to write page to disc.";
         }
         close(fd);

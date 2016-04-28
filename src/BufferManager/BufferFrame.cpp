@@ -1,5 +1,9 @@
 #include <string.h>
 #include <pthread.h>
+
+#include <cerrno>
+#include <cstdio>
+#include <iostream>
 #include <cstdlib>
 #include "BufferFrame.hpp"
 
@@ -13,7 +17,9 @@ BufferFrame::BufferFrame(uint64_t pageNo, void* data)
     // Ensures the data-block PAGESIZE large
     this->data = realloc(data, PAGESIZE);
 
-    if (pthread_rwlock_init(this->latch, NULL)) {
+    if (pthread_rwlock_init(this->latch, NULL) != 0) {
+        std::cout << "Could not initialize latch." << std::endl;
+        perror(nullptr);
         throw "Could not initialize latch.";
     }
 }
@@ -24,7 +30,9 @@ BufferFrame::BufferFrame(uint64_t pageNo)
     LSN(0),
     state(NEW) {
     this->data = malloc(PAGESIZE);
-    if (pthread_rwlock_init(this->latch, NULL)) {
+    if (pthread_rwlock_init(this->latch, NULL) != 0) {
+        std::cout << "Could not initialize latch." << std::endl;
+        perror(nullptr);
         throw "Could not initialize latch.";
     }
 }
@@ -32,11 +40,16 @@ BufferFrame::BufferFrame(uint64_t pageNo)
 
 void BufferFrame::lock(bool exclusive) {
     if (exclusive) {
+    	std::cout << this->latch << std::endl;
         if (pthread_rwlock_wrlock(this->latch) != 0) {
+            perror("ERROR");
+            std::cout << "Failed to lock exclusive." << std::endl;
             throw "Failed to lock.";
         }
     } else {
-        if (pthread_rwlock_rdlock(this->latch)) {
+        if (pthread_rwlock_rdlock(this->latch) != 0) {
+            perror(nullptr);
+            std::cout << "Failed to lock non exclusive." << std::endl;
             throw "Failed to lock.";
         }
     }
@@ -51,6 +64,7 @@ int BufferFrame::tryLock(bool exclusive) {
 
 void BufferFrame::unlock() {
     if (pthread_rwlock_unlock(this->latch) != 0) {
+        std::cout << "Failed to unlock." << std::endl;
         throw "Failed to unlock.";
     }
 }
@@ -68,6 +82,7 @@ int BufferFrame::getLSN() {
 
 void BufferFrame::setLSN(int LSN) {
     if (LSN <= this->LSN) {
+        std::cout << "Can not lower the LSN." << std::endl;
         throw "Can not lower the LSN.";
     }
     this->LSN = LSN;
@@ -91,6 +106,7 @@ void *BufferFrame::getData() {
 
 BufferFrame::~BufferFrame() {
     if (pthread_rwlock_trywrlock(this->latch) != 0) {
+        std::cout << "Tying to delete locked BufferFrame." << std::endl;
         throw "Trying to delete locked BufferFrame.";
     }
     free(this->data);
