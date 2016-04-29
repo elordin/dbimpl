@@ -9,7 +9,7 @@
 
 class HashTable {
  private:
-    std::unordered_map<uint64_t, BufferFrame> hashtable;
+    std::unordered_map<uint64_t, BufferFrame*> hashtable;
 
     std::mutex global_mutex;
 
@@ -32,7 +32,7 @@ class HashTable {
 
     BufferFrame& get(uint64_t); // TODO Thread safety
 
-    void insert(uint64_t, BufferFrame);
+    void insert(uint64_t, BufferFrame*);
 
     void remove(uint64_t);
 

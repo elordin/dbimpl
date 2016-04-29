@@ -2,7 +2,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-
+#include <string.h>
 #include <iostream>
 #include <mutex>
 #include <cerrno>
@@ -13,8 +13,8 @@
 #include "HashTable.hpp"
 
 
-#define PAGE_PART_SIZE 48
-#define SEGMENT_PART_SIZE 8 * sizeof(uint64_t) - PAGE_PART_SIZE
+#define PAGE_PART_SIZE 8
+#define SEGMENT_PART_SIZE (8 * sizeof(uint64_t) - PAGE_PART_SIZE)
 
 
 using namespace std;
@@ -27,19 +27,22 @@ BufferManager::BufferManager(uint pageCount)
 
 
 BufferFrame& BufferManager::fixPage(uint64_t pageId, bool exclusive) {
+    std::cout << "Fixing page: " << pageId << std::endl;
     this->table->lockBucket(pageId);
     if (!this->table->contains(pageId)) {
+
         // Insert an empty frame and lock it exclusively while performing disc I/O
-        BufferFrame emptyFrame = BufferFrame(pageId);
-        emptyFrame.setState(CLEAN);
+        BufferFrame* emptyFrame = new BufferFrame(pageId);
+
+        emptyFrame->setState(CLEAN);
         this->table->insert(pageId, emptyFrame);
-        emptyFrame.lock(true); // X-Lock
+        emptyFrame->lock(true); // X-Lock
 
         this->table->unlockBucket(pageId);
 
         // Load from disc (slow I/O), only the single frame is locked.
-        this->load(pageId, emptyFrame.getData());
-        emptyFrame.unlock();
+        this->load(pageId, emptyFrame->getData());
+        emptyFrame->unlock();
     } else {
         this->table->unlockBucket(pageId);
     }
@@ -57,6 +60,7 @@ BufferFrame& BufferManager::fixPage(uint64_t pageId, bool exclusive) {
 
 
 void BufferManager::unfixPage(BufferFrame& frame, bool isDirty) {
+    std::cout << "Unfixing page: " << frame.getPageNo() << std::endl;
     // Return the one lock this thread held.
     frame.unlock();
     // If then no one with locks is left and the page is dirty, write it to disc.
@@ -88,18 +92,22 @@ void BufferManager::load(uint64_t pageId, void *destination) {
         std::string filename = this->getSegmentFilename(this->getSegmentId(pageId));
         int fd;
 
-        if ((fd = open(filename.c_str(), O_CREAT | O_RDONLY)) < 0) {
+        if ((fd = open(filename.c_str(), O_CREAT | O_RDWR)) < 0) {
             std::cout << "Failed to open segment file" << std::endl;
+            perror("\tERROR");
             throw "Failed to open segment file.";
         }
 
-        off_t offset = this->getPageOffset(pageId)
-        ;
-        // Load from disc (slow I/O), only the single frame is locked.
+        off_t offset = this->getPageOffset(pageId);
+
+        std::cout << "FD: " << fd << " Offset: " << offset << " Pagesize: " << PAGESIZE << std::endl;
+
         // Ensure sufficient space.
-        if (posix_fallocate(fd, offset, PAGESIZE) != 0) {
+        int err;
+        if ((err = posix_fallocate(fd, offset, PAGESIZE)) != 0) {
             std::cout << "Failed to allocate sufficient file space." << std::endl;
-            perror("ERROR");
+            std::cout << "\t> " << strerror(err) << std::endl;
+            perror("\tERROR");
             throw "Failed to allocate sufficient file space.";
         }
 
@@ -163,13 +171,14 @@ std::string BufferManager::getSegmentFilename(uint segmentId) {
 
 uint64_t BufferManager::getSegmentId(uint64_t pageId) {
     // Extracts prefix of length SEGMENT_PART_SIZE from pageId by bitmask
-    return (pageId >> PAGE_PART_SIZE) & (2 << SEGMENT_PART_SIZE - 1);
+    return (pageId >> PAGE_PART_SIZE) & ((2L << SEGMENT_PART_SIZE) - 1);
 }
 
 
 off_t BufferManager::getPageOffset(uint64_t pageId) {
+
     // Extracts suffix of length PAGE_PART_SIZE from pageId by bitmask
-    return (pageId & (2L << PAGE_PART_SIZE - 1)) * PAGESIZE;
+    return (pageId & ((2L << SEGMENT_PART_SIZE) - 1)) * PAGESIZE;
 }
 
 

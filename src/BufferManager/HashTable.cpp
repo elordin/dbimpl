@@ -39,13 +39,13 @@ bool HashTable::contains(uint64_t key) {
 
 
 BufferFrame& HashTable::get(uint64_t key) {
-    return this->hashtable.at(key);
+    return *this->hashtable.at(key);
 }
 
 
-void HashTable::insert(uint64_t key, BufferFrame value) {
+void HashTable::insert(uint64_t key, BufferFrame* value) {
     this->lockBucket(key);
-    hashtable.emplace(key, value);
+    hashtable.insert({{key, value}});
     this->unlockBucket(key);
 }
 

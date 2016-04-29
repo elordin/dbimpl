@@ -15,7 +15,7 @@ enum FrameStatus {
 class BufferFrame {
  private:
     const uint64_t pageNo;
-    pthread_rwlock_t* latch;
+    pthread_rwlock_t latch;
     int LSN;
     FrameStatus state;
     void* data;

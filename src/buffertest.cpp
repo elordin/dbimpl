@@ -29,10 +29,11 @@ static void* scan(void *arg) {
     vector<unsigned> counters(pagesOnDisk, 0);
 
     while (!stop) {
-        std::cout << " - " << std::endl;
         unsigned start = random()%(pagesOnDisk-10);
+        std::cout << "\t>" << start << std::endl;
         for (unsigned page=start; page<start+10; page++) {
             BufferFrame& bf = bm->fixPage(page, false);
+            std::cout << "\t" << bf.getPageNo() << std::endl;
             unsigned newcount = reinterpret_cast<unsigned*>(bf.getData())[0];
             assert(counters[page]<=newcount);
             counters[page]=newcount;
@@ -51,7 +52,6 @@ static void* readWrite(void *arg) {
     for (unsigned i=0; i<100000/threadCount; i++) {
         bool isWrite = rand_r(&threadSeed[threadNum])%128<10;
         BufferFrame& bf = bm->fixPage(randomPage(threadNum), isWrite);
-
         if (isWrite) {
             count++;
             reinterpret_cast<unsigned*>(bf.getData())[0]++;
@@ -112,7 +112,7 @@ int main(int argc, char** argv) {
     // restart buffer manager
     delete bm;
     bm = new BufferManager(pagesInRAM);
-    
+
     // check counter
     unsigned totalCountOnDisk = 0;
     for (unsigned i=0; i<pagesOnDisk; i++) {
