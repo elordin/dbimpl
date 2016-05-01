@@ -73,14 +73,17 @@ void BufferManager::unfixPage(BufferFrame& frame, bool isDirty) {
 
 int BufferManager::evict() {
     std::lock_guard<std::mutex> lock(this->lru_lock);
-    // for ( each frame ) {
-        // if (frame->tryLock(true) == 0) {
-            // Remove from table
-            // Remove from lru list
-            // delete frame;
-            // return 0
-        // }
-    // }
+    uint64_t leastRecentlyUsed = this->lru_list.front();
+	BufferFrame& frame = this->table->get(leastRecentlyUsed);
+	if (frame.tryLock(true) == 0) {
+		// Remove from table
+		this->table->lockTable();
+		this->table->remove(leastRecentlyUsed);
+		this->table->unlockTable();
+		// Remove and delete first item from lru list
+		this->lru_list.pop_front();
+		return 0;
+	}
     return -1;
     // Implicit unlock of lru_lock at end of scope.
 }
