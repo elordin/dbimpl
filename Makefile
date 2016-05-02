@@ -21,6 +21,7 @@ OBJ = $(FILES:%.cpp=$(OBJDIR)/%.o)
 
 
 all: compile
+	echo "\n\tUse \`make $(OUTNAME)\` to compile runnable.\n"
 
 compile: $(OBJ)
 

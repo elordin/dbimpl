@@ -18,7 +18,7 @@ BufferFrame::BufferFrame(uint64_t pageNo, void* data)
     this->data = realloc(data, PAGESIZE);
 
     if (pthread_rwlock_init(&this->latch, NULL) != 0) {
-        std::cout << "Could not initialize latch." << std::endl;
+        perror("Could not initialize latch.");
         perror(nullptr);
         throw "Could not initialize latch.";
     }
@@ -31,7 +31,7 @@ BufferFrame::BufferFrame(uint64_t pageNo)
     state(NEW) {
     this->data = malloc(PAGESIZE);
     if (pthread_rwlock_init(&this->latch, NULL) != 0) {
-        std::cout << "Could not initialize latch." << std::endl;
+        perror("Could not initialize latch.");
         throw "Could not initialize latch.";
     }
 }
@@ -41,13 +41,13 @@ void BufferFrame::lock(bool exclusive) {
     if (exclusive) {
         if (pthread_rwlock_wrlock(&this->latch) != 0) {
             perror("ERROR");
-            std::cout << "Failed to lock exclusive." << std::endl;
+            perror("Failed to lock exclusive.");
             throw "Failed to lock.";
         }
     } else {
         if (pthread_rwlock_rdlock(&this->latch) != 0) {
             perror("ERROR");
-            std::cout << "Failed to lock non exclusive." << std::endl;
+            perror("Failed to lock non exclusive.");
             throw "Failed to lock.";
         }
     }
@@ -62,7 +62,7 @@ int BufferFrame::tryLock(bool exclusive) {
 
 void BufferFrame::unlock() {
     if (pthread_rwlock_unlock(&this->latch) != 0) {
-        std::cout << "Failed to unlock." << std::endl;
+        perror("Failed to unlock.");
         throw "Failed to unlock.";
     }
 }
@@ -80,7 +80,7 @@ int BufferFrame::getLSN() {
 
 void BufferFrame::setLSN(int LSN) {
     if (LSN <= this->LSN) {
-        std::cout << "Can not lower the LSN." << std::endl;
+        perror("Can not lower the LSN.");
         throw "Can not lower the LSN.";
     }
     this->LSN = LSN;
@@ -104,7 +104,7 @@ void *BufferFrame::getData() {
 
 BufferFrame::~BufferFrame() {
     if (pthread_rwlock_trywrlock(&this->latch) != 0) {
-        std::cout << "Tying to delete locked BufferFrame." << std::endl;
+        perror("Tying to delete locked BufferFrame.");
         throw "Trying to delete locked BufferFrame.";
     }
     free(this->data);
