@@ -30,10 +30,8 @@ static void* scan(void *arg) {
 
     while (!stop) {
         unsigned start = random()%(pagesOnDisk-10);
-        std::cout << "\t>" << start << std::endl;
         for (unsigned page=start; page<start+10; page++) {
             BufferFrame& bf = bm->fixPage(page, false);
-            std::cout << "\t" << bf.getPageNo() << std::endl;
             unsigned newcount = reinterpret_cast<unsigned*>(bf.getData())[0];
             assert(counters[page]<=newcount);
             counters[page]=newcount;

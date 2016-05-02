@@ -27,7 +27,6 @@ BufferManager::BufferManager(uint pageCount)
 
 
 BufferFrame& BufferManager::fixPage(uint64_t pageId, bool exclusive) {
-    std::cout << "Fixing page: " << pageId << std::endl;
     this->table->lockBucket(pageId);
     if (!this->table->contains(pageId)) {
 
@@ -60,7 +59,6 @@ BufferFrame& BufferManager::fixPage(uint64_t pageId, bool exclusive) {
 
 
 void BufferManager::unfixPage(BufferFrame& frame, bool isDirty) {
-    std::cout << "Unfixing page: " << frame.getPageNo() << std::endl;
     // Return the one lock this thread held.
     frame.unlock();
     // If then no one with locks is left and the page is dirty, write it to disc.
@@ -103,8 +101,6 @@ void BufferManager::load(uint64_t pageId, void *destination) {
 
         off_t offset = this->getPageOffset(pageId);
 
-        std::cout << "FD: " << fd << " Offset: " << offset << " Pagesize: " << PAGESIZE << std::endl;
-
         // Ensure sufficient space.
         int err;
         if ((err = posix_fallocate(fd, offset, PAGESIZE)) != 0) {
@@ -134,12 +130,13 @@ void BufferManager::load(uint64_t pageId, void *destination) {
 
 
 void BufferManager::write(BufferFrame& frame) {
+
     // Assumes at least read lock on the frame
     // frame.lock(false); // S-Lock
 
     uint64_t pageId = frame.getPageNo();
 
-    if (frame.getState() == DIRTY) {
+    // if (frame.getState() == DIRTY) {
         std::string filename = this->getSegmentFilename(this->getSegmentId(pageId));
         int fd;
 
@@ -160,8 +157,9 @@ void BufferManager::write(BufferFrame& frame) {
             std::cout << "Failed to write page to disc." << std::endl;
             throw "Failed to write page to disc.";
         }
+
         close(fd);
-    }
+    // }
 
     // frame.unlock();
 }
