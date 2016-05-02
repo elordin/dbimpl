@@ -8,12 +8,14 @@
 #include <cerrno>
 #include <cstdio>
 
+#include <bitset>
+
 #include "BufferManager.hpp"
 #include "BufferFrame.hpp"
 #include "HashTable.hpp"
 
 
-#define PAGE_PART_SIZE 8
+#define PAGE_PART_SIZE 56
 #define SEGMENT_PART_SIZE (8 * sizeof(uint64_t) - PAGE_PART_SIZE)
 
 
@@ -27,7 +29,7 @@ BufferManager::BufferManager(uint pageCount)
 
 
 BufferFrame& BufferManager::fixPage(uint64_t pageId, bool exclusive) {
-    std::cout << "Fixing page: " << pageId << std::endl;
+    // std::cout << "Fixing page: " << pageId << std::endl;
     this->table->lockBucket(pageId);
     if (!this->table->contains(pageId)) {
 
@@ -60,7 +62,7 @@ BufferFrame& BufferManager::fixPage(uint64_t pageId, bool exclusive) {
 
 
 void BufferManager::unfixPage(BufferFrame& frame, bool isDirty) {
-    std::cout << "Unfixing page: " << frame.getPageNo() << std::endl;
+    // std::cout << "Unfixing page: " << frame.getPageNo() << std::endl;
     // Return the one lock this thread held.
     frame.unlock();
     // If then no one with locks is left and the page is dirty, write it to disc.
@@ -74,22 +76,24 @@ void BufferManager::unfixPage(BufferFrame& frame, bool isDirty) {
 int BufferManager::evict() {
     std::lock_guard<std::mutex> lock(this->lru_lock);
     uint64_t leastRecentlyUsed = this->lru_list.front();
-	BufferFrame& frame = this->table->get(leastRecentlyUsed);
-	if (frame.tryLock(true) == 0) {
-		// Remove from table
-		this->table->lockTable();
-		this->table->remove(leastRecentlyUsed);
-		this->table->unlockTable();
-		// Remove and delete first item from lru list
-		this->lru_list.pop_front();
-		return 0;
-	}
+    BufferFrame& frame = this->table->get(leastRecentlyUsed);
+    if (frame.tryLock(true) == 0) {
+        // Remove from table
+        this->table->lockTable();
+        this->table->remove(leastRecentlyUsed);
+        this->table->unlockTable();
+        // Remove and delete first item from lru list
+        this->lru_list.pop_front();
+        return 0;
+    }
     return -1;
     // Implicit unlock of lru_lock at end of scope.
 }
 
 
 void BufferManager::load(uint64_t pageId, void *destination) {
+    std::cout << "Loading " << pageId << std::endl;
+
     if (this->table->size() < this->pageCount) {
 
         std::string filename = this->getSegmentFilename(this->getSegmentId(pageId));
@@ -103,13 +107,10 @@ void BufferManager::load(uint64_t pageId, void *destination) {
 
         off_t offset = this->getPageOffset(pageId);
 
-        std::cout << "FD: " << fd << " Offset: " << offset << " Pagesize: " << PAGESIZE << std::endl;
-
         // Ensure sufficient space.
         int err;
         if ((err = posix_fallocate(fd, offset, PAGESIZE)) != 0) {
             std::cout << "Failed to allocate sufficient file space." << std::endl;
-            std::cout << "\t> " << strerror(err) << std::endl;
             perror("\tERROR");
             throw "Failed to allocate sufficient file space.";
         }
@@ -127,7 +128,7 @@ void BufferManager::load(uint64_t pageId, void *destination) {
             this->load(pageId, destination);
         } else {
             std::cout << "Failed to evict page. No free memory available." << std::endl;
-			throw "Failed to evict page. No free memory available.";
+            throw "Failed to evict page. No free memory available.";
         }
     }
 }
@@ -179,12 +180,14 @@ uint64_t BufferManager::getSegmentId(uint64_t pageId) {
 
 
 off_t BufferManager::getPageOffset(uint64_t pageId) {
-
     // Extracts suffix of length PAGE_PART_SIZE from pageId by bitmask
-    return (pageId & ((2L << SEGMENT_PART_SIZE) - 1)) * PAGESIZE;
+    return (pageId & ((0x2 << SEGMENT_PART_SIZE) - 1)) * PAGESIZE;
 }
 
 
 BufferManager::~BufferManager() {
     delete this->table;
 }
+
+
+
