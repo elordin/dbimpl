@@ -15,7 +15,8 @@ BINDIR = ./bin
 # file names
 FILES = BufferManager/BufferManager.cpp \
 		BufferManager/BufferFrame.cpp BufferManager/HashTable.cpp \
-		buffertest.cpp
+		SlottedPages/SPSegment.cpp \
+		buffertest.cpp #slottedTest.cpp
 SRC = $(FILES:%=$(SRCDIR)/%)
 OBJ = $(FILES:%.cpp=$(OBJDIR)/%.o)
 
