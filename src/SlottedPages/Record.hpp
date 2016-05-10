@@ -1,19 +1,28 @@
 #pragma once
 
 #include <cstdint>
+#include <cstring>
+#include <cstdlib>
 
+// A simple Record implementation
 class Record {
- private:
+   unsigned len;
+   char* data;
 
- public:
-    /**
-     *  Constructor for a new Record
-     */
-    Record();
-
-    /**
-     *  Deconstructor
-     */
-
-    ~Record();
+public:
+   // Assignment Operator: deleted
+   Record& operator=(Record& rhs) = delete;
+   // Copy Constructor: deleted
+   Record(Record& t) = delete;
+   // Move Constructor
+   Record(Record&& t);
+   // Constructor
+   Record(unsigned len, const char* const ptr);
+   // Destructor
+   ~Record();
+   // Get pointer to data
+   const char* getData() const;
+   // Get data size in bytes
+   unsigned getLen() const;
 };
+
