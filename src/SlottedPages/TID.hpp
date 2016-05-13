@@ -4,22 +4,20 @@
 
 class TID {
  private:
-	uint64_t pageID;
-	uint64_t slotID;
+    uint64_t tid;
 
  public:
     /**
      *  Constructor for a new TID
      */
-    TID(uint64_t pageID, uint64_t slotID);
+    TID(uint64_t tid);
 
-	uint64_t getPage();
-	
-	uint64_t getSlot();
+    uint64_t getPage();
+
+    uint64_t getSlot();
 
     /**
      *  Deconstructor
      */
-
     ~TID();
 };

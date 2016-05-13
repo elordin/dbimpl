@@ -1,7 +1,7 @@
 # set compiler flags and misc
 CC = clang++
 
-# CFLAGS = -std=c++11 -Wall -Wextra -Werror -pedantic -O3
+# CFLAGS = -std=c++11 -O3 -pthread -Wall -Wextra -pedantic
 CFLAGS = -std=c++11 -O0 -pthread # -Wall -Wextra -pedantic
 TFLAGS = -g -DTEST
 
@@ -13,10 +13,10 @@ OBJDIR = ./obj
 BINDIR = ./bin
 
 # file names
-FILES = BufferManager/BufferManager.cpp \
-		BufferManager/BufferFrame.cpp BufferManager/HashTable.cpp \
+FILES = BufferManager/BufferManager.cpp BufferManager/BufferFrame.cpp BufferManager/HashTable.cpp \
+		buffertest.cpp \
 		SlottedPages/SPSegment.cpp SlottedPages/TID.cpp SlottedPages/Record.cpp \
-		buffertest.cpp #slottedTest.cpp
+		# slottedTest.cpp
 SRC = $(FILES:%=$(SRCDIR)/%)
 OBJ = $(FILES:%.cpp=$(OBJDIR)/%.o)
 
