@@ -18,10 +18,12 @@ TID SPSegment::insert(const Record& r){
 
 	// Find page with enough space for r
 	bool checked = false; 
+	BufferFrame frame(0);
+	SlottedPage* page_test = nullptr;
 	for (unsigned p=0; p<100; ++p) {
-		BufferFrame frame = bm->fixPage(p, false);
-		SlottedPage* page = reinterpret_cast<SlottedPage*> frame.getData();
-		unsigned freeSpaceOnPage = page->getFreeSpaceOnPage();
+		BufferFrame frame_test = bm->fixPage(p, false);
+		page_test = reinterpret_cast<SlottedPage*>(frame_test.getData());
+		unsigned freeSpaceOnPage = page_test->getFreeSpaceOnPage();
     	if (freeSpaceOnPage >= r.getLen()) {
 			// Do we have to unfix the frame before?
 			BufferFrame frame = bm->fixPage(p, true);
@@ -34,7 +36,7 @@ TID SPSegment::insert(const Record& r){
         throw "There is not enough space to insert the record";
 	}
 
-    SlottedPage* page = reinterpret_cast<SlottedPage*> frame.getData();
+    SlottedPage* page = reinterpret_cast<SlottedPage*>(frame.getData());
     // Reorder record ?
 
     // Write to page
@@ -48,14 +50,14 @@ TID SPSegment::insert(const Record& r){
 
 bool SPSegment::remove(TID tid){
     BufferFrame frame = bm->fixPage(tid.getPage(), true);
-    SlottedPage* page = reinterpret_cast<SlottedPage*> frame.getData();
+    SlottedPage* page = reinterpret_cast<SlottedPage*>(frame.getData());
     page->remove(tid.getSlot());
     page->recompress();
 }
 
 Record SPSegment::lookup(TID tid) {
     BufferFrame frame = bm->fixPage(tid.getPage(), true);
-    SlottedPage* page = reinterpret_cast<SlottedPage*> frame.getData();
+    SlottedPage* page = reinterpret_cast<SlottedPage*>(frame.getData());
     Slot* slot = page->getSlot(tid.getSlot());
 
     if (slot->length == 0 && slot->offset == 0)
@@ -77,7 +79,7 @@ bool SPSegment::update(TID tid, const Record& r){
         // [Optional] Re-compress
 	} else {
 		BufferFrame frame = bm->fixPage(tid.getPage(), true);
-		SlottedPage* page = reinterpret_cast<SlottedPage*> frame.getData();
+		SlottedPage* page = reinterpret_cast<SlottedPage*>(frame.getData());
 		unsigned freeSpaceOnPage = page->getFreeSpaceOnPage();
     	if (freeSpaceOnPage >= len_new) {
 			overWriteData(tid, tid.getSlot(), r);
@@ -91,7 +93,7 @@ bool SPSegment::update(TID tid, const Record& r){
 
 void SPSegment::overWriteData(TID tid, uint64_t tid_slot, const Record& r){
 	BufferFrame frame = bm->fixPage(tid.getPage(), true);
-    SlottedPage* page = reinterpret_cast<SlottedPage*> frame.getData();
+    SlottedPage* page = reinterpret_cast<SlottedPage*>(frame.getData());
     page->remove(tid_slot);
 	uint64_t offset = page->insert(r);
     Slot* slot = page->getFreeSlot();
@@ -101,4 +103,5 @@ void SPSegment::overWriteData(TID tid, uint64_t tid_slot, const Record& r){
 
 SPSegment::~SPSegment(){
 	bm->~BufferManager();
+	//TODO: delete slottedPages
 }
