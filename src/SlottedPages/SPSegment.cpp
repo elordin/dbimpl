@@ -17,10 +17,10 @@ SPSegment::SPSegment(uint64_t pageSize)
 TID SPSegment::insert(const Record& r){
 
 	// Find page with enough space for r
-	bool checked = false; 
+	bool checked = false;
 	BufferFrame frame(0);
 	SlottedPage* page_test = nullptr;
-	for (unsigned p=0; p<100; ++p) {
+	for (unsigned p=0; p<100; ++p) { // TODO 100 ? how come ?
 		BufferFrame frame_test = bm->fixPage(p, false);
 		page_test = reinterpret_cast<SlottedPage*>(frame_test.getData());
 		unsigned freeSpaceOnPage = page_test->getFreeSpaceOnPage();
@@ -30,7 +30,7 @@ TID SPSegment::insert(const Record& r){
 			checked = true;
 			break;
     	}
-    }	
+    }
 	if(!checked){
 		perror("There is not enough space to insert the record");
         throw "There is not enough space to insert the record";
@@ -53,6 +53,7 @@ bool SPSegment::remove(TID tid){
     SlottedPage* page = reinterpret_cast<SlottedPage*>(frame.getData());
     page->remove(tid.getSlot());
     page->recompress();
+    return true;
 }
 
 Record SPSegment::lookup(TID tid) {
@@ -67,7 +68,7 @@ Record SPSegment::lookup(TID tid) {
 }
 
 bool SPSegment::update(TID tid, const Record& r){
-    
+
 	Record r_old = this->lookup(tid);
 	unsigned len_old = r_old.getLen();
 	unsigned len_new = r.getLen();
@@ -84,7 +85,7 @@ bool SPSegment::update(TID tid, const Record& r){
     	if (freeSpaceOnPage >= len_new) {
 			overWriteData(tid, tid.getSlot(), r);
     	} else {
-			remove(tid);			
+			remove(tid);
 			TID new_tid = insert(r);
             // TODO: indirection to new position
 		}

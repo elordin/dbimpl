@@ -9,13 +9,13 @@ class SlottedPage {
     Slot* firstEmptySlot;
     char* slotEnd;
     char* end;
-    char* freeSpace;  
+    char* freeSpace;
 	unsigned pageSize;
  public:
-	SlottedPage(unsigned pageSize);	
+	SlottedPage(unsigned pageSize);
 
 	/*
-	 * Inserts a record and returns the new offset.
+	 * Inserts a record and returns the TID just inserted.
 	 */
 	uint64_t insert(const Record& r);
 
@@ -23,9 +23,9 @@ class SlottedPage {
 	 * Removes the slot from the page.
 	 */
 	void remove(uint64_t slot);
-		
+
 	/*
-	 * Compresses the page and returns the new amount of free space 
+	 * Compresses the page and returns the new amount of free space
 	 */
     uint64_t recompress();
 
@@ -33,10 +33,10 @@ class SlottedPage {
 
 	Slot* getFreeSlot();
 
-    Record* getRecordPtr(uint64_t slotNum); 
+    Record* getRecordPtr(uint64_t slotNum);
     // oder Record* getRecordPtr(uint64_t intraPageOffset);
 
 	unsigned getFreeSpaceOnPage();
-	
+
 	~SlottedPage();
 };
