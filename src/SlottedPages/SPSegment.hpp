@@ -9,6 +9,7 @@ struct Slot {
     uint64_t length;
     uint64_t tid;
     bool     moved;
+    Slot() : offset(0), length(0), tid(0), moved(false) {}
 };
 
 

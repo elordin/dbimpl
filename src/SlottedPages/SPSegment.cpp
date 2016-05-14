@@ -6,36 +6,43 @@
 
 using namespace std;
 
-#define HEADER_SIZE sizeof(unsigned) + sizeof(unsigned) + sizeof(Slot*) + sizeof(void*) + sizeof(uint64_t)
-
 SPSegment::SPSegment(){
 
 }
 
-Slot SPSegment::getSlot(uint64_t slotNumber) {
-    return reinterpret_cast<Slot>(this + HEADER_SIZE + slotNumber * sizeof(Slot));
-}
-
 TID SPSegment::insert(const Record& r){
-    // Get a page with enough space from BufferManager
-    // Reorder record
+
+    // Find page with enough space
+    BufferFrame frame = bm.fixPage(???)
+
+    SlottedPage* page = reinterpret_cast<SlottedPage*> frame.getData();
+    // Reorder record ?
+
     // Write to page
-    // Update slot
+    uint64_t offset = page->insert(r);
+    Slot* slot = page->getFreeSlot();
+    slot->length = Record->getLen();
+    slot->offset = offset;
+
     // Return TID
 }
 
 bool SPSegment::remove(TID tid){
-    // Remove data
-    // Empty slot
-    // Re-compress data
+    BufferFrame frame = bm.fixPage(tid.getPage());
+    SlottedPage* page = reinterpret_cast<SlottedPage*> frame.getData();
+    page->remove(tid.getSlot());
+    page->recompress();
 }
 
 Record SPSegment::lookup(TID tid) {
-    Slot slot = this->getSlot(tid.getSlot());
+    BufferFrame frame = bm.fixPage(tid.getPage());
+    SlottedPage* page = reinterpret_cast<SlottedPage*> frame.getData();
+    Slot* slot = page->getSlot(tid.getSlot());
+
     if (slot->length == 0 && slot->offset == 0)
         return Record(0, nullptr); // Slot is empty, return empty record
     else
-        return Record(slot->length, this + SEGMENT_SIZE - slot->offset);
+        return Record(slot->length, page->getRecordPtr(slot->offset));
 }
 
 bool SPSegment::update(TID tid, const Record& r){
