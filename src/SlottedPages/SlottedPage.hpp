@@ -10,8 +10,9 @@ class SlottedPage {
     char* slotEnd;
     char* end;
     char* freeSpace;  
+	unsigned pageSize;
  public:
-	SlottedPage();	
+	SlottedPage(unsigned pageSize);	
 
 	/*
 	 * Inserts a record and returns the new offset.
