@@ -12,7 +12,7 @@ using namespace std;
 
 // todo: adapt to your implementation
 uint64_t extractPage(TID tid) {
-   return tid >> 16;
+   return tid.getPage();
 }
 
 const unsigned initialSize = 100; // in (slotted) pages
@@ -53,8 +53,8 @@ int main(int argc, char** argv) {
 
    // Setting everything
    BufferManager bm(100);
-   // TODO ...
-   SPSegment& sp = 
+   // TODO adapt to implementation
+   SPSegment& sp(new SPSegement(pageSize));
    Random64 rnd;
 
    // Insert some records

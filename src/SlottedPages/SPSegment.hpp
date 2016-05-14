@@ -3,6 +3,7 @@
 #include <cstdint>
 #include "TID.hpp"
 #include "Record.hpp"
+#include "../BufferManager/BufferManager.hpp"
 
 struct Slot {
     uint64_t offset;
@@ -15,12 +16,13 @@ struct Slot {
 
 class SPSegment {
  private:
-
+	BufferManager* bm;
+	uint64_t pageSize;
  public:
     /**
      *  Constructor for a new SPSegment
      */
-    SPSegment();
+    SPSegment(uint64_t pageSize);
 
     /**
      *  Provides an interface to insert "records". Searches through the segment’s pages looking for a page with enough space to store r.
@@ -42,6 +44,11 @@ class SPSegment {
      *  Updates the record pointed to by tid with the content of record r.
      */
 	bool update(TID tid, const Record& r);
+
+	/**
+	 *	Overwrites Data at a slot address.
+	 */
+	void overWriteData(TID tid, uint64_t tid_slot, const Record& r);
 
     /**
      *  Deconstructor
