@@ -12,20 +12,20 @@ struct Header {
 
 SlottedPage::SlottedPage(uint64_t pageId)
  : pageId(pageId) {
-
     header          = this;
     firstSlot       = this + sizeof(Header);
     firstEmptySlot  = firstSlot;
     slotEnd         = firstSlot + SLOT_COUNT * sizeof(Slot);
     end             = this + PAGE_SIZE;
     freeSpace       = end;
-
 }
 
 uint64_t SlottedPage::insert(const Record& r){
     if (this->getFreeSpaceOnPage() < r.getLen()) throw "Insufficient space.";
 
     Slot* slot = firstEmptySlot;
+
+    assert(firstEmptySlot < slotEnd);
 
     char* destination = this->freeSpace - r.getLen();
     memcpy(r, destination, r.getLen());
@@ -37,7 +37,10 @@ uint64_t SlottedPage::insert(const Record& r){
     slot.moved  = false;
     slot.tid    = pageId | slotNum; // TODO
 
-    firstEmptySlot += sizeof(Slot); // TODO What when freeSlot is one between two full slots due to remove?
+    for (Slot* s = firstEmptySlot; s < slotEnd; s += sizeof(Slot)) {
+        firstEmptySlot = s;
+        if (s->isEmpty()) break;
+    }
 
     freeSpace -= r.getLen();
 
@@ -55,7 +58,10 @@ void SlottedPage::remove(uint64_t slotNum) {
     }
 }
 
-uint64_t SlottedPage::recompress(){
+
+
+uint64_t SlottedPage::recompress() {
+    // TODO
 }
 
 
@@ -69,7 +75,8 @@ Slot* SlottedPage::getFreeSlot(){
 }
 
 Record* SlottedPage::getRecordPtr(uint64_t slotNum){
-    Slot* slot = firstSlot + slotNum * sizeof(Slot);
+    Slot* slot = getSlot(slotNum);
+    if (slot.isEmpty()) throw "Empty slot doesn't have an associated record.";
     return reinterpret_cast<Record*>(slot + slot->offset);
 }
 

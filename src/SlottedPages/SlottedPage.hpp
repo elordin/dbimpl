@@ -7,7 +7,7 @@ class SlottedPage {
     char* header;
     Slot* firstSlot;
     Slot* firstEmptySlot;
-    char* slotEnd;
+    Slot* slotEnd;
     char* end;
     char* freeSpace;
 	unsigned pageSize;
