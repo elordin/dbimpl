@@ -53,7 +53,7 @@ bool SPSegment::remove(TID tid){
     page->remove(tid.getSlot());
     page->recompress();
 
-    bm->unfix(frame, true);
+    bm->unfixPage(frame, true);
 
     return true;
 }
@@ -74,38 +74,30 @@ bool SPSegment::update(TID tid, const Record& r){
 	Record r_old = this->lookup(tid);
 	unsigned len_old = r_old.getLen();
 	unsigned len_new = r.getLen();
-	// If size doesn't change
+	BufferFrame frame = bm->fixPage(tid.getPage(), true);
+    SlottedPage* page = reinterpret_cast<SlottedPage*>(frame.getData());
+	// If size doesn't change, use memcpy
 	if(len_old == len_new){
-		overWriteData(tid, tid.getSlot(), r);
+		memcpy(page->getRecordPtr(tid.getSlot()), &r, r.getLen());
 	} else if(len_old > len_new){
-        overWriteData(tid, tid.getSlot(), r);
-        // [Optional] Re-compress
+		memcpy(page->getRecordPtr(tid.getSlot()), &r, r.getLen());
+        page->recompress();
 	} else {
-		BufferFrame frame = bm->fixPage(tid.getPage(), true);
-		SlottedPage* page = reinterpret_cast<SlottedPage*>(frame.getData());
 		unsigned freeSpaceOnPage = page->getFreeSpaceOnPage();
     	if (freeSpaceOnPage >= len_new) {
-			overWriteData(tid, tid.getSlot(), r);
+			page->remove(tid.getSlot());
+			page->recompress();
+			uint64_t offset = page->insert(r);
     	} else {
-			remove(tid);
+			page->remove(tid.getSlot());
+    		page->recompress();
 			TID new_tid = insert(r);
             // TODO: indirection to new position
 		}
 	}
-}
-
-void SPSegment::overWriteData(TID tid, uint64_t tid_slot, const Record& r){
-	BufferFrame frame = bm->fixPage(tid.getPage(), true);
-    SlottedPage* page = reinterpret_cast<SlottedPage*>(frame.getData());
-
-    assert(r->getLen() < page->getSlot(tid->getSlot())->length());
-
-    page->remove(tid_slot);
-	uint64_t offset = page->insert(r);
-    Slot* slot = page->getFreeSlot();
+	bm->unfixPage(frame, true);
 }
 
 SPSegment::~SPSegment() {
-	//TODO: delete slottedPages
     delete bm;
 }
