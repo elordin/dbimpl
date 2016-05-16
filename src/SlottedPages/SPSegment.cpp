@@ -10,8 +10,8 @@
 
 using namespace std;
 
-SPSegment::SPSegment(uint64_t pageSize)
-	: bm(new BufferManager(100)),
+SPSegment::SPSegment(BufferManager* bm, uint64_t pageSize)
+	: bm(bm),
 	  pageSize(pageSize){
 }
 
@@ -21,17 +21,22 @@ TID SPSegment::insert(const Record& r){
 	bool checked = false;
 	BufferFrame frame(0);
 	SlottedPage* page_test = nullptr;
-	for (unsigned p=0; p<100; ++p) { // TODO 100 ? how come ?
-		BufferFrame frame_test = bm->fixPage(p, false);
+	for (unsigned p=0; p<bm->getPageCount(); ++p) { 
+		BufferFrame& frame_test = bm->fixPage(p, false);
 		page_test = reinterpret_cast<SlottedPage*>(frame_test.getData());
 		unsigned freeSpaceOnPage = page_test->getFreeSpaceOnPage();
+cout << "Free: " << freeSpaceOnPage << ", Length: " << r.getLen() << endl;
     	if (freeSpaceOnPage >= r.getLen()) {
 			// Do we have to unfix the frame before?
-			BufferFrame frame = bm->fixPage(p, true);
+			//bm->unfixPage(frame_test, false);
+			//BufferFrame frame = bm->fixPage(p, true);
+			BufferFrame& frame = frame_test;
 			checked = true;
 			break;
     	}
+		bm->unfixPage(frame_test, false);
     }
+
 	if(!checked){
 		perror("There is not enough space to insert the record");
         throw "There is not enough space to insert the record";

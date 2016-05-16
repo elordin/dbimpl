@@ -179,6 +179,9 @@ off_t BufferManager::getPageOffset(uint64_t pageId) {
     return (pageId & ((2L << SEGMENT_PART_SIZE) - 1)) * PAGESIZE;
 }
 
+uint BufferManager::getPageCount(){
+	return this->pageCount;
+}
 
 BufferManager::~BufferManager() {
     delete this->table;

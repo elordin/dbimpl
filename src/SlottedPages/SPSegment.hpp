@@ -24,7 +24,7 @@ class SPSegment {
     /**
      *  Constructor for a new SPSegment
      */
-    SPSegment(uint64_t pageSize);
+    SPSegment(BufferManager* bm, uint64_t pageSize);
 
     /**
      *  Provides an interface to insert "records". Searches through the segment’s pages looking for a page with enough space to store r.

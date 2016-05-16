@@ -17,7 +17,7 @@ SlottedPage::SlottedPage(uint64_t pageId)
     header          = (char*) this;
     firstSlot       = (Slot*) this + sizeof(Header);
     firstEmptySlot  = firstSlot;
-    slotEnd         = reinterpret_cast<Slot*>(reinterpret_cast<unsigned>(firstSlot) + SLOT_COUNT * sizeof(Slot));
+    slotEnd         = reinterpret_cast<Slot*>(reinterpret_cast<uint64_t>(firstSlot) + SLOT_COUNT * sizeof(Slot));
     end             = (char*) this + PAGE_SIZE;
     freeSpace       = end;
 }
@@ -84,7 +84,7 @@ Record* SlottedPage::getRecordPtr(uint64_t slotNum){
 }
 
 unsigned SlottedPage::getFreeSpaceOnPage(){
-    return ((unsigned) this->freeSpace - (unsigned) this->slotEnd);
+    return ((uint64_t) this->freeSpace - (uint64_t) this->slotEnd);
 }
 
 SlottedPage::~SlottedPage(){
