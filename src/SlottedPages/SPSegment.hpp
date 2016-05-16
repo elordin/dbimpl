@@ -21,11 +21,25 @@ class SPSegment {
  private:
 	BufferManager* bm;
 	uint64_t pageSize;
+    uint64_t lastPage;
+    uint64_t segmentId;
  public:
     /**
      *  Constructor for a new SPSegment
      */
-    SPSegment(BufferManager* bm, uint64_t pageSize);
+    SPSegment(uint64_t segmentId, BufferManager* bm, uint64_t pageSize);
+
+    /**
+     *  Loads another fresh page
+     */
+    SlottedPage* addPage();
+
+    /**
+     *  Returns the first page with at least spaceRequired bytes of free space.
+     */
+    SlottedPage* getFreeSpace(unsigned spaceRequired);
+
+
 
     /**
      *  Provides an interface to insert "records". Searches through the segment’s pages looking for a page with enough space to store r.

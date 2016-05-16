@@ -8,36 +8,42 @@
 
 using namespace std;
 
-SPSegment::SPSegment(BufferManager* bm, uint64_t pageSize)
+SPSegment::SPSegment(uint64_t segmentId, BufferManager* bm, uint64_t pageSize)
 	: bm(bm),
-	  pageSize(pageSize){
+	  pageSize(pageSize),
+      lastPage(0),
+      segmentId(segmentId) {
 }
+
+SlottedPage* SPSegment::addPage() {
+    this->lastPage + 1
+    BufferFrame frame = bm->fixPage(this->lastPage);
+
+    SlottedPage* page = new SlottedPage();
+    memcpy(frame->getData(), page, PAGE_SIZE);
+
+    return frame->getData();
+}
+
+SlottedPage* SPSegment::getFreeSpace(unsigned spaceRequired) {
+    for (uint64_t i = 0; i < this->lastPage; i++) {
+        uint64_t pageId = (this->segmentID << 48) | (i << 6);
+
+        BufferFrame frame = bm->fixPage(pageId, true);
+        SlottedPage* sp = reinterpret_cast<SlottedPage*>(frame->getData());
+        if (sp->freeSpaceOnPage() > spaceRequired)
+            return sp;
+        bm->unfixPage(frame, false);
+    }
+    return this->addPage();
+}
+
 
 TID SPSegment::insert(const Record& r){
 
 	// Find page with enough space for r
-	bool checked = false;
-	BufferFrame frame(0);
-	SlottedPage* page_test = nullptr;
-	for (unsigned p=0; p<bm->getPageCount(); ++p) { 
-		BufferFrame& frame_test = bm->fixPage(p, false);
-		page_test = reinterpret_cast<SlottedPage*>(frame_test.getData());
-		unsigned freeSpaceOnPage = page_test->getFreeSpaceOnPage();
-		//cout << "Free: " << freeSpaceOnPage << ", Length: " << r.getLen() << endl;
-    	if (freeSpaceOnPage >= r.getLen()) {
-			BufferFrame& frame = frame_test;
-			checked = true;
-			break;
-    	}
-		bm->unfixPage(frame_test, false);
-    }
+    SlottedPage* page = this->getFreeSpace(r.getLen());
 
-	if(!checked){
-		perror("There is not enough space to insert the record");
-        throw "There is not enough space to insert the record";
-	}
-
-    SlottedPage* page = reinterpret_cast<SlottedPage*>(frame.getData());
     // Reorder record ?
 
     // Write to page

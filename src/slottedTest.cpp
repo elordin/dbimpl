@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
    // Setting everything
    BufferManager* bm(new BufferManager(100));
    // TODO adapt to implementation
-   SPSegment* sp(new SPSegment(bm, pageSize));
+   SPSegment* sp(new SPSegment(1, bm, pageSize));
    Random64 rnd;
 
    // Insert some records

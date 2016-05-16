@@ -10,7 +10,7 @@
 
 #include "BufferManager.hpp"
 
-#define PAGE_PART_SIZE 8
+#define PAGE_PART_SIZE 48
 #define SEGMENT_PART_SIZE (8 * sizeof(uint64_t) - PAGE_PART_SIZE)
 
 
