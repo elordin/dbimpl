@@ -2,8 +2,8 @@
 #include "SlottedPage.hpp"
 
 
-#define PAGE_SIZE 8192; // TODO Duplicate to BufferManager
-#define SLOT_COUNT 256; // TODO sure about that value?
+#define PAGE_SIZE 8192 // TODO Duplicate to BufferManager
+#define SLOT_COUNT 256 // TODO sure about that value?
 
 using namespace std;
 
@@ -14,11 +14,11 @@ struct Header {
 
 SlottedPage::SlottedPage(uint64_t pageId)
  : pageId(pageId) {
-    header          = this;
-    firstSlot       = this + sizeof(Header);
+    header          = (char*) this;
+    firstSlot       = (Slot*) this + sizeof(Header);
     firstEmptySlot  = firstSlot;
-    slotEnd         = firstSlot + SLOT_COUNT * sizeof(Slot);
-    end             = this + PAGE_SIZE;
+    slotEnd         = reinterpret_cast<Slot*>(reinterpret_cast<unsigned>(firstSlot) + SLOT_COUNT * sizeof(Slot));
+    end             = (char*) this + PAGE_SIZE;
     freeSpace       = end;
 }
 
@@ -32,10 +32,10 @@ uint64_t SlottedPage::insert(const Record& r){
     char* destination = this->freeSpace - r.getLen();
     memcpy(destination, &r, r.getLen());
 
-    uint64_t slotNum = (slot - header) / sizeof(Slot);
+    uint64_t slotNum = ((char*) slot - header) / sizeof(Slot);
 
     slot->length = r.getLen();
-    slot->offset = destination - slot; // Slot::offset is the offset between slot and data
+    slot->offset = (uint64_t) destination - (uint64_t) slot; // Slot::offset is the offset between slot and data
     slot->moved  = false;
     slot->tid    = pageId | slotNum; // TODO
 
@@ -64,6 +64,7 @@ void SlottedPage::remove(uint64_t slotNum) {
 
 uint64_t SlottedPage::recompress() {
     // TODO
+    return 0;
 }
 
 
@@ -83,7 +84,7 @@ Record* SlottedPage::getRecordPtr(uint64_t slotNum){
 }
 
 unsigned SlottedPage::getFreeSpaceOnPage(){
-    return this->freeSpace - this->slotEnd;
+    return ((unsigned) this->freeSpace - (unsigned) this->slotEnd);
 }
 
 SlottedPage::~SlottedPage(){
