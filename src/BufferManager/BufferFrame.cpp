@@ -101,7 +101,6 @@ void *BufferFrame::getData() {
     return this->data;
 }
 
-
 BufferFrame::~BufferFrame() {
     if (pthread_rwlock_trywrlock(&this->latch) != 0) {
         perror("Tying to delete locked BufferFrame.");

@@ -9,9 +9,6 @@
 #include <cstdio>
 
 #include "BufferManager.hpp"
-#include "BufferFrame.hpp"
-#include "HashTable.hpp"
-
 
 #define PAGE_PART_SIZE 8
 #define SEGMENT_PART_SIZE (8 * sizeof(uint64_t) - PAGE_PART_SIZE)

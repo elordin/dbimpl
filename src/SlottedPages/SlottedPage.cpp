@@ -3,7 +3,7 @@
 
 
 #define PAGE_SIZE 8192 // TODO Duplicate to BufferManager
-#define SLOT_COUNT 256 // TODO sure about that value?
+#define SLOT_COUNT 128 // TODO sure about that value?
 
 using namespace std;
 

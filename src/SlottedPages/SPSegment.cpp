@@ -5,8 +5,6 @@
 #include "SPSegment.hpp"
 #include "SlottedPage.hpp"
 #include "SlottedPage.cpp"
-#include "../BufferManager/BufferManager.hpp"
-#include "../BufferManager/BufferFrame.hpp"
 
 using namespace std;
 
@@ -25,11 +23,8 @@ TID SPSegment::insert(const Record& r){
 		BufferFrame& frame_test = bm->fixPage(p, false);
 		page_test = reinterpret_cast<SlottedPage*>(frame_test.getData());
 		unsigned freeSpaceOnPage = page_test->getFreeSpaceOnPage();
-cout << "Free: " << freeSpaceOnPage << ", Length: " << r.getLen() << endl;
+		//cout << "Free: " << freeSpaceOnPage << ", Length: " << r.getLen() << endl;
     	if (freeSpaceOnPage >= r.getLen()) {
-			// Do we have to unfix the frame before?
-			//bm->unfixPage(frame_test, false);
-			//BufferFrame frame = bm->fixPage(p, true);
 			BufferFrame& frame = frame_test;
 			checked = true;
 			break;

@@ -4,6 +4,7 @@
 #include "TID.hpp"
 #include "Record.hpp"
 #include "../BufferManager/BufferManager.hpp"
+#include "../BufferManager/BufferFrame.hpp"
 
 struct Slot {
     TID      tid;
