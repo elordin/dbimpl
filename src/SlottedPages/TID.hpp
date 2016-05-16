@@ -16,6 +16,8 @@ class TID {
 
     uint64_t getSlot();
 
+	uint64_t getTID();
+
     /**
      *  Deconstructor
      */

@@ -1,4 +1,6 @@
+#include <cassert>
 #include "SlottedPage.hpp"
+
 
 #define PAGE_SIZE 8192; // TODO Duplicate to BufferManager
 #define SLOT_COUNT 256; // TODO sure about that value?
@@ -28,14 +30,14 @@ uint64_t SlottedPage::insert(const Record& r){
     assert(firstEmptySlot < slotEnd);
 
     char* destination = this->freeSpace - r.getLen();
-    memcpy(r, destination, r.getLen());
+    memcpy(destination, &r, r.getLen());
 
     uint64_t slotNum = (slot - header) / sizeof(Slot);
 
-    slot.length = r.getLen();
-    slot.offset = destination - slot; // Slot::offset is the offset between slot and data
-    slot.moved  = false;
-    slot.tid    = pageId | slotNum; // TODO
+    slot->length = r.getLen();
+    slot->offset = destination - slot; // Slot::offset is the offset between slot and data
+    slot->moved  = false;
+    slot->tid    = pageId | slotNum; // TODO
 
     for (Slot* s = firstEmptySlot; s < slotEnd; s += sizeof(Slot)) {
         firstEmptySlot = s;
@@ -44,14 +46,14 @@ uint64_t SlottedPage::insert(const Record& r){
 
     freeSpace -= r.getLen();
 
-    return slot.tid;
+    return slot->tid.getTID();
 }
 
 void SlottedPage::remove(uint64_t slotNum) {
     Slot* slot = this->getSlot(slotNum);
-    slot.length = 0;
-    slot.offset = 0;
-    slot.moved  = false;
+    slot->length = 0;
+    slot->offset = 0;
+    slot->moved  = false;
 
     if (firstEmptySlot > slot) {
         firstEmptySlot = slot;
@@ -76,7 +78,7 @@ Slot* SlottedPage::getFreeSlot(){
 
 Record* SlottedPage::getRecordPtr(uint64_t slotNum){
     Slot* slot = getSlot(slotNum);
-    if (slot.isEmpty()) throw "Empty slot doesn't have an associated record.";
+    if (slot->isEmpty()) throw "Empty slot doesn't have an associated record.";
     return reinterpret_cast<Record*>(slot + slot->offset);
 }
 

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include "SPSegment.hpp"
+#include "Record.hpp"
 
 class SlottedPage {
  private:
@@ -10,9 +12,9 @@ class SlottedPage {
     Slot* slotEnd;
     char* end;
     char* freeSpace;
-	unsigned pageSize;
+	uint64_t pageId;
  public:
-	SlottedPage(unsigned pageSize);
+	SlottedPage(uint64_t pageId);
 
 	/*
 	 * Inserts a record and returns the TID just inserted.

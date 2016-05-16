@@ -11,7 +11,7 @@ struct Slot {
     uint64_t length;
     bool     moved;
     Slot() : offset(0), length(0), tid(TID(0)), moved(false) {}
-    bool isEmpty() { return this->offset == 0 && this->length == 0 }
+    bool isEmpty() { return this->offset == 0 && this->length == 0; }
     Record* getRecord() { return reinterpret_cast<Record*>(this + offset); }
 };
 
@@ -46,11 +46,6 @@ class SPSegment {
      *  Updates the record pointed to by tid with the content of record r.
      */
 	bool update(TID tid, const Record& r);
-
-	/**
-	 *	Overwrites Data at a slot address.
-	 */
-	void overWriteData(TID tid, uint64_t tid_slot, const Record& r);
 
     /**
      *  Deconstructor

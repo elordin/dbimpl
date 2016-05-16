@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include "SPSegment.hpp"
 #include "SlottedPage.hpp"
+#include "SlottedPage.cpp"
 #include "../BufferManager/BufferManager.hpp"
 #include "../BufferManager/BufferFrame.hpp"
 
@@ -43,6 +44,8 @@ TID SPSegment::insert(const Record& r){
     uint64_t offset = page->insert(r);
 
     // Return TID
+	Slot* slot = page->getSlot(offset);
+	return slot->tid;
 }
 
 bool SPSegment::remove(TID tid){
@@ -67,7 +70,7 @@ Record SPSegment::lookup(TID tid) {
     if (slot->length == 0 && slot->offset == 0)
         return Record(0, nullptr); // Slot is empty, return empty record
     else
-        return Record(slot->length, slot->getRecord());
+        return Record(slot->length, slot->getRecord()->getData());
 }
 
 bool SPSegment::update(TID tid, const Record& r){
@@ -96,6 +99,7 @@ bool SPSegment::update(TID tid, const Record& r){
 		}
 	}
 	bm->unfixPage(frame, true);
+	return true;
 }
 
 SPSegment::~SPSegment() {

@@ -48,13 +48,13 @@ int main(int argc, char** argv) {
    const unsigned pageSize = atoi(argv[1]);
 
    // Bookkeeping
-   unordered_map<TID, unsigned> values; // TID -> testData entry
+   unordered_map<uint64_t, unsigned> values; // TID -> testData entry
    unordered_map<unsigned, unsigned> usage; // pageID -> bytes used within this page
 
    // Setting everything
    BufferManager bm(100);
    // TODO adapt to implementation
-   SPSegment& sp(new SPSegement(pageSize));
+   SPSegment* sp(new SPSegment(pageSize));
    Random64 rnd;
 
    // Insert some records
@@ -75,7 +75,8 @@ int main(int argc, char** argv) {
          break;
 
       // Insert record
-      TID tid = sp.insert(Record(s.size(), s.c_str()));
+      TID t = sp->insert(Record(s.size(), s.c_str()));
+	  uint64_t tid = t.getTID();
       assert(values.find(tid)==values.end()); // TIDs should not be overwritten
       values[tid]=r;
       unsigned pageId = extractPage(tid); // extract the pageId from the TID
@@ -89,18 +90,19 @@ int main(int argc, char** argv) {
       bool del = rnd.next()%10 == 0;
 
       // Select victim
-      TID tid = values.begin()->first;
+      TID t = values.begin()->first;
+	  uint64_t tid = t.getTID();
       unsigned pageId = extractPage(tid);
       const std::string& value = testData[(values.begin()->second)%testData.size()];
       unsigned len = value.size();
 
       // Lookup
-      Record rec = sp.lookup(tid);
+      Record rec = sp->lookup(tid);
       assert(rec.getLen() == len);
       assert(memcmp(rec.getData(), value.c_str(), len)==0);
 
       if (del) { // do delete
-         assert(sp.remove(tid));
+         assert(sp->remove(tid));
          values.erase(tid);
          usage[pageId]-=len;
       }
@@ -109,14 +111,15 @@ int main(int argc, char** argv) {
    // Update some values ('usage' counter invalid from here on)
    for (unsigned i=0; i<maxUpdates; ++i) {
       // Select victim
-      TID tid = values.begin()->first;
+      TID t = values.begin()->first;
+	  uint64_t tid = t.getTID();
 
       // Select new string/record
       uint64_t r = rnd.next()%testData.size();
       const string s = testData[r];
 
       // Replace old with new value
-      sp.update(tid, Record(s.size(), s.c_str()));
+      sp->update(tid, Record(s.size(), s.c_str()));
       values[tid]=r;
    }
 
@@ -125,7 +128,7 @@ int main(int argc, char** argv) {
       TID tid = p.first;
       const std::string& value = testData[p.second];
       unsigned len = value.size();
-      Record rec = sp.lookup(tid);
+      Record rec = sp->lookup(tid);
       assert(rec.getLen() == len);
       assert(memcmp(rec.getData(), value.c_str(), len)==0);
    }
