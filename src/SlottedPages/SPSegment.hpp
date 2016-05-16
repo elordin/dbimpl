@@ -5,16 +5,7 @@
 #include "Record.hpp"
 #include "../BufferManager/BufferManager.hpp"
 #include "../BufferManager/BufferFrame.hpp"
-
-struct Slot {
-    TID      tid;
-    uint64_t offset;
-    uint64_t length;
-    bool     moved;
-    Slot() : offset(0), length(0), tid(TID(0)), moved(false) {}
-    bool isEmpty() { return this->offset == 0 && this->length == 0; }
-    Record* getRecord() { return reinterpret_cast<Record*>(this + offset); }
-};
+#include "SlottedPage.hpp"
 
 
 class SPSegment {

@@ -16,22 +16,24 @@ SPSegment::SPSegment(uint64_t segmentId, BufferManager* bm, uint64_t pageSize)
 }
 
 SlottedPage* SPSegment::addPage() {
-    this->lastPage + 1
-    BufferFrame frame = bm->fixPage(this->lastPage);
+    this->lastPage += 1;
+    uint64_t pageId = (this->segmentId << 48) | (this->lastPage << 6);
+    BufferFrame frame = bm->fixPage(pageId, true);
 
-    SlottedPage* page = new SlottedPage();
-    memcpy(frame->getData(), page, PAGE_SIZE);
 
-    return frame->getData();
+    SlottedPage* page = new SlottedPage(pageId);
+    memcpy(frame.getData(), page, PAGE_SIZE);
+
+    return reinterpret_cast<SlottedPage*>(frame.getData());
 }
 
 SlottedPage* SPSegment::getFreeSpace(unsigned spaceRequired) {
     for (uint64_t i = 0; i < this->lastPage; i++) {
-        uint64_t pageId = (this->segmentID << 48) | (i << 6);
+        uint64_t pageId = (this->segmentId << 48) | (i << 6);
 
         BufferFrame frame = bm->fixPage(pageId, true);
-        SlottedPage* sp = reinterpret_cast<SlottedPage*>(frame->getData());
-        if (sp->freeSpaceOnPage() > spaceRequired)
+        SlottedPage* sp = reinterpret_cast<SlottedPage*>(frame.getData());
+        if (sp->getFreeSpaceOnPage() > spaceRequired)
             return sp;
         bm->unfixPage(frame, false);
     }
