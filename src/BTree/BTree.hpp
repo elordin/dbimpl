@@ -1,15 +1,36 @@
 #pragma once
 
-#include "../SlottedPage/TID.hpp"
+#include "../SlottedPages/TID.hpp"
+
+template<class Key, class Value, unsigned fanOut>
+struct InnerNode {
+	InnerNode() : num_keys(0) {}
+	unsigned lsn;
+	uint64_t upper; //page-id of right-most child
+	unsigned num_keys;
+	Key keys[fanOut-1];
+	//char* children[fanOut];
+};
+
+template<class Key, class Value, unsigned fanOut>
+struct LeafNode {
+	LeafNode() : num_keys(0) {}
+	unsigned lsn;
+	uint64_t next;
+	unsigned num_keys;
+	Key keys[fanOut-1];
+	Value values[fanOut-1];
+};
 
 template<
     class Key,
     class Value,
-    class KeyEqual = std::equal_to<Key>
+	unsigned fanOut
+    //, class KeyEqual= std::equal_to<Key>
 >
+
 class BTree {
  private:
-    unsigned fanOut;
     char* root;
 
     /**
@@ -35,7 +56,7 @@ class BTree {
      */
     bool contains(char* node, Key key);
  public:
-    BTree(unsigned fanOut);
+	BTree();
 
     /**
      *  Inserts the given value with associated key into the tree.
@@ -54,4 +75,4 @@ class BTree {
      */
     Value lookup(Key key);
 
-}
+};
