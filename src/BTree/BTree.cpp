@@ -72,7 +72,36 @@ bool BTree<Key, Value, fanOut>::insert(Key key, Value value) {
 					return true;
 				} else {
 					// split leaf into two
+					LeafNode<Key, Value, fanOut>* new_leaf = new LeafNode<Key, Value, fanOut>();
+					new_leaf->num_keys = leaf->num_keys - (fanOut/2);
+					for(unsigned j=0; j < new_leaf->num_keys; ++j) {
+						new_leaf->keys[j] = leaf->keys[(fanOut/2)+j];
+						new_leaf->values[j] = leaf->values[(fanOut/2)+j];
+					}
+					leaf->num_keys = (fanOut/2);
 					// insert entry into proper side
+					unsigned place = 0;
+					while((place < leaf->num_keys) && (leaf->keys[place]<key)) {
+						++place;
+					}
+					if(place < (fanOut/2)){
+						for(unsigned i=leaf->num_keys; i > place; --i) {
+							leaf->keys[i]= leaf->keys[i-1];
+							leaf->values[i]= leaf->values[i-1];
+						}
+						leaf->num_keys++;
+						leaf->keys[place]= key;
+						leaf->values[place]= value;
+					} else {
+						place = place - (fanOut/2);
+						for(unsigned i=new_leaf->num_keys; i > place; --i) {
+							new_leaf->keys[i]= new_leaf->keys[i-1];
+							new_leaf->values[i]= new_leaf->values[i-1];
+						}
+						new_leaf->num_keys++;
+						new_leaf->keys[place]= key;
+						new_leaf->values[place]= value;
+					}
 					// recSeparator: insert maximum of left page as separator into parent
 					// if parent overflows
 						// split parent
