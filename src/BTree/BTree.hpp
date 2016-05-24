@@ -5,6 +5,8 @@
 #include <iostream>
 #include <functional>
 
+#include "../BufferManager/BufferManager.hpp"
+
 #define FANOUT 2
 
 template<class Key, class Value>
@@ -44,32 +46,33 @@ class BTree {
 
  private:
     char* root;
+    BufferManager* bm;
 
     /**
      *  Returns the nth element in a node.
      */
     static key_type* nthKeyOfNode(char* node, unsigned n) {
-        return reinterpret_cast<key_type*>(node + sizeof(char*) + (sizeof(char*) + sizeof(Value)) * n);
     }
 
     /**
      *  Returns nth pointer within a node, pointing to nth child.
      */
     static char* nthPointerOfNode(char* node, unsigned n) {
-        return reinterpret_cast<value_type*>(node + (sizeof(char*) + sizeof(value_type)) * n);
     }
 
     /**
      *  Returns child node that would presumably contain key.
      *  Throws an exception if node is a leaf node.
      */
-    static char* findChildNode(char* node, key_type key);
+    static char* findChildNode(char* node, key_type key) {
+    }
 
     /**
      *  Returns the entry with given key from given node.
      *  Throws an exception if node is not a leaf node.
      */
-    static value_type* findEntry(char* node, key_type key);
+    static value_type* findEntry(char* node, key_type key) {
+    }
 
     /**
      *  Returns whether a given node is a leaf node or not.
@@ -99,7 +102,9 @@ class BTree {
     }
 
  public:
-    BTree();
+    BTree(BufferManager* bm) : bm(bm) {
+
+    };
 
     /**
      *  Inserts the given value with associated key into the tree.
@@ -183,11 +188,31 @@ class BTree {
      */
     bool erase(key_type key) {
         // Find node
-
+        LeafNode<key_type, value_type>* node;
         // Check for underflow
+        if (this->contains(node, key)) {
+            if (node->num_keys == FANOUT / 2) {
+                // Underflow
+                while (false) {
 
-        // If no underflow, delete
-
+                }
+                // Take from next
+                // If all nexts are underflowing, reduce height
+            } else {
+                unsigned index = this->findEntryByIndex(node, key);
+                node->num_keys--;
+                memcpy(node->values + index * sizeof(value_type), 
+                    node->values + (index + 1) * sizeof(value_type), 
+                    (FANOUT - 1 - index) * sizeof(value_type)
+                );
+                memcpy(node->keys + index * sizeof(key_type), 
+                    node->keys + (index + 1) * sizeof(key_type),
+                    (FANOUT - 1 - index) * sizeof(value_type)
+                );
+            }
+        } else {
+            return false;
+        }
     }
 
     /**

@@ -8,5 +8,5 @@
 using namespace std;
 
 void dummy() {
-    BTree<int, int>* tree = new BTree<int, int>();
+    BTree<int, int>* tree = new BTree<int, int>(new BufferManager(100));
 }
