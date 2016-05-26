@@ -17,6 +17,7 @@ struct InnerNode {
 	unsigned num_keys;
 	Key keys[FANOUT - 1];
 	//char* children[fanOut];
+    uint64_t getChildPageId(Key key);
 };
 
 template<class Key, class Value>
@@ -46,6 +47,7 @@ class BTree {
 
  private:
     char* root;
+    uint64_t rootPageId;
     BufferManager* bm;
 
     /**
@@ -103,7 +105,6 @@ class BTree {
 
  public:
     BTree(BufferManager* bm) : bm(bm) {
-
     };
 
     /**
@@ -183,22 +184,38 @@ class BTree {
         return recFindNode(this->root);
     }
 
+    bool isLeaf(void* data) { return false; }
+
     /**
      *  Removes the entry with value key from the tree.
      */
     bool erase(key_type key) {
         // Find node
-        LeafNode<key_type, value_type>* node;
-        // Check for underflow
-        if (this->contains(node, key)) {
-            if (node->num_keys == FANOUT / 2) {
-                // Underflow
-                while (false) {
 
-                }
-                // Take from next
-                // If all nexts are underflowing, reduce height
+        uint64_t pageId = this->rootPageId;
+        LeafNode<key_type, value_type>* node;
+
+        BufferFrame* frame = (BufferFrame*) malloc(sizeof(BufferFrame));
+
+        bool notFound = true;
+        while (notFound) {
+            frame = &(bm->fixPage(pageId, false));
+            auto data = frame->getData();
+            if ((notFound = isLeaf(data))) {
+                node = reinterpret_cast<LeafNode<key_type, value_type>*>(data);
             } else {
+                InnerNode<key_type, value_type>* inner = reinterpret_cast<InnerNode<key_type, value_type>*>(data);
+                pageId = inner->getChildPageId(key);
+                bm->unfixPage(*frame, false);
+            }
+        }
+
+        if (node->num_keys < 1 || this->contains(node, key)) {
+            // Check for underflow
+            // if (node->num_keys == FANOUT / 2) {
+                // Underflow
+            // } else {
+                // TODO Currently ignoring underflow
                 unsigned index = this->findEntryByIndex(node, key);
                 node->num_keys--;
                 memcpy(node->values + index * sizeof(value_type), 
@@ -209,8 +226,11 @@ class BTree {
                     node->keys + (index + 1) * sizeof(key_type),
                     (FANOUT - 1 - index) * sizeof(value_type)
                 );
-            }
+                bm->unfixPage(*frame, true);
+                return true;
+            // }
         } else {
+            bm->unfixPage(*frame, false);
             return false;
         }
     }
