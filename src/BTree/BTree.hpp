@@ -3,9 +3,11 @@
 #include <cassert>
 #include <cerrno>
 #include <iostream>
-#include <functional>
+#include <string>
+#include <typeinfo>
 
 #include "../BufferManager/BufferManager.hpp"
+#include "../SlottedPages/TID.hpp"
 
 #define FANOUT 2
 
@@ -55,11 +57,30 @@ class BTree {
     BufferManager* bm;
 
  public:
-    BTree(BufferManager* bm) : bm(bm) {
+    BTree<key_type, value_type>(BufferManager* bm) : bm(bm) {
     };
 
 	//TODO
 	unsigned size(){}
+
+	//TODO
+	unsigned findEntryByIndex(LeafNode<key_type, value_type>* node, key_type key){}
+
+	//TODO
+	bool isSmaller(key_type key, key_type key2){
+		/*if(typeid(key).name() =='m') {
+			return key < key2;
+		} else if(typeid(key).name() == 'c'){
+			return memcmp(key.data, key2.data, 20) < 0;
+		} else if(typeid(key).name() == "St4pairIiiE"){
+			if (key.first < key2.first){
+         		return true;
+      		} else {
+         		return (key.first == key2.first) && (key.second < key2.second);
+			}
+		}*/
+		return false;
+	}
 
     /**
      *  Inserts the given value with associated key into the tree.
@@ -86,7 +107,7 @@ class BTree {
         }
 
         // if key is already in the tree, throw error
-        if(contains(leaf, key)){
+        if(leaf->contains(key)){
         	perror("Key already in tree.");
             throw "Key already in tree.";
         } else {
@@ -97,7 +118,7 @@ class BTree {
             if(leaf->num_keys <= FANOUT - 2){
             	// insert key and value in the appropriate place
                 unsigned place = 0;
-                while((place < leaf->num_keys) && (leaf->keys[place]<key)) {
+                while((place < leaf->num_keys) && (isSmaller(leaf->keys[place], key))) {
                 	++place;
                 }
                 for(unsigned i=leaf->num_keys; i > place; --i) {
@@ -144,7 +165,7 @@ class BTree {
                 leaf->num_keys = (FANOUT / 2);
                 // insert entry into proper side
                 unsigned place = 0;
-                while((place < leaf->num_keys) && (leaf->keys[place]<key)) {
+                while((place < leaf->num_keys) && (isSmaller(leaf->keys[place], key))) {
                 	++place;
                 }
                 if(place < (FANOUT / 2)){
@@ -235,7 +256,7 @@ class BTree {
             }
         }
 
-        if (node->num_keys > 0 && this->contains(node, key)) {
+        if (node->num_keys > 0 && node->contains(key)) {
             bm->unfixPage(*frame, false);
             frame = &bm->fixPage(pageId, true);
             // Check for underflow
@@ -261,6 +282,9 @@ class BTree {
             return false;
         }
     }
+
+	//TODO: Adjust to test, use tid
+	Value* lookup(key_type key, TID tid){}
 
     /**
      *  Returns the value associated with key from the tree.

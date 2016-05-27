@@ -6,7 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "MyDatabaseIncludes.hpp"
+#include "BTree/BTree.hpp"
+#include "SlottedPages/TID.hpp"
 
 /* Comparator functor for uint64_t*/
 struct MyCustomUInt64Cmp {
@@ -67,9 +68,9 @@ const IntPair& getKey(const uint64_t& i) {
 template <class T, class CMP>
 void test(uint64_t n) {
    // Set up stuff, you probably have to change something here to match to your interfaces
-   BufferManager bm;
+   BufferManager* bm(new BufferManager(100));
    // ...
-   BTree<T, CMP> bTree(segment);
+   BTree<T, CMP> bTree(bm);
 
    // Insert values
    for (uint64_t i=0; i<n; ++i)
@@ -78,9 +79,9 @@ void test(uint64_t n) {
 
    // Check if they can be retrieved
    for (uint64_t i=0; i<n; ++i) {
-      TID tid;
+      TID tid(0);
       assert(bTree.lookup(getKey<T>(i),tid));
-      assert(tid==i*i);
+      assert(tid.getTID()==i*i);
    }
 
    // Delete some values
@@ -90,12 +91,12 @@ void test(uint64_t n) {
 
    // Check if the right ones have been deleted
    for (uint64_t i=0; i<n; ++i) {
-      TID tid;
+      TID tid(0);
       if ((i%7)==0) {
          assert(!bTree.lookup(getKey<T>(i),tid));
       } else {
          assert(bTree.lookup(getKey<T>(i),tid));
-         assert(tid==i*i);
+         assert(tid.getTID()==i*i);
       }
    }
 
