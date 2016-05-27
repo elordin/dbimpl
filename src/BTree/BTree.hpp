@@ -58,81 +58,154 @@ class BTree {
     BTree(BufferManager* bm) : bm(bm) {
     };
 
+	//TODO
+	unsigned size(){}
+
     /**
      *  Inserts the given value with associated key into the tree.
      *  Throws an exception if the value was already in the tree.
      */
     bool insert(key_type key, value_type value) {
         // lookup leaf in which key should be inserted
-        std::function<Value(char*)> recFindNode = [this, key, value, &recFindNode](char* node) -> Value {
-            if(this->isLeaf(node)){
-                // if key is already in the tree, throw error
-                if(contains(node, key)){
-                    perror("Key already in tree.");
-                    throw "Key already in tree.";
-                } else {
-                    LeafNode<key_type, value_type>* leaf =
-                        reinterpret_cast<LeafNode<key_type, value_type>*>(node);
-                    // if there is enough space in the leaf (fanOut-2 at most)
-                    if(leaf->num_keys <= FANOUT - 2){
-                        // insert key and value in the appropriate place
-                        unsigned place = 0;
-                        while((place < leaf->num_keys) && (leaf->keys[place]<key)) {
-                            ++place;
-                        }
-                        for(unsigned i=leaf->num_keys; i > place; --i) {
-                            leaf->keys[i]= leaf->keys[i-1];
-                            leaf->values[i]= leaf->values[i-1];
-                        }
-                        leaf->num_keys++;
-                        leaf->keys[place]= key;
-                        leaf->values[place]= value;
-                        return true;
-                    } else {
-                        // split leaf into two
-                        LeafNode<key_type, value_type>* new_leaf =
-                            new LeafNode<key_type, value_type>();
-                        new_leaf->num_keys = leaf->num_keys - (FANOUT/2);
-                        for(unsigned j=0; j < new_leaf->num_keys; ++j) {
-                            new_leaf->keys[j] = leaf->keys[(FANOUT/2)+j];
-                            new_leaf->values[j] = leaf->values[(FANOUT/2)+j];
-                        }
-                        leaf->num_keys = (FANOUT / 2);
-                        // insert entry into proper side
-                        unsigned place = 0;
-                        while((place < leaf->num_keys) && (leaf->keys[place]<key)) {
-                            ++place;
-                        }
-                        if(place < (FANOUT / 2)){
-                            for(unsigned i=leaf->num_keys; i > place; --i) {
-                                leaf->keys[i]= leaf->keys[i-1];
-                                leaf->values[i]= leaf->values[i-1];
-                            }
-                            leaf->num_keys++;
-                            leaf->keys[place]= key;
-                            leaf->values[place]= value;
-                        } else {
-                            place = place - (FANOUT / 2);
-                            for(unsigned i=new_leaf->num_keys; i > place; --i) {
-                                new_leaf->keys[i]= new_leaf->keys[i-1];
-                                new_leaf->values[i]= new_leaf->values[i-1];
-                            }
-                            new_leaf->num_keys++;
-                            new_leaf->keys[place]= key;
-                            new_leaf->values[place]= value;
-                        }
-                        // recSeparator: insert maximum of left page as separator into parent
-                        // if parent overflows
-                            // split parent
-                            // recSeparator()
-                        // create a new root if needed
-                    }
-                }
+		uint64_t pageId = this->rootPageId;
+        LeafNode<key_type, value_type>* leaf;
+        BufferFrame* frame = (BufferFrame*) malloc(sizeof(BufferFrame));
+
+        bool searching = true;
+        while (searching) {
+            frame = &(bm->fixPage(pageId, false));
+            auto data = frame->getData();
+            if (isLeaf(data)) {
+                leaf = reinterpret_cast<LeafNode<key_type, value_type>*>(data);
+				searching = false;
             } else {
-                return recFindNode(this->findChildNode(node, key));
+                InnerNode<key_type, value_type>* inner = reinterpret_cast<InnerNode<key_type, value_type>*>(data);
+                pageId = inner->getChildPageId(key);
+                bm->unfixPage(*frame, false);
             }
-        };
-        return recFindNode(this->root);
+        }
+
+        // if key is already in the tree, throw error
+        if(contains(leaf, key)){
+        	perror("Key already in tree.");
+            throw "Key already in tree.";
+        } else {
+			bm->unfixPage(*frame, false);
+            frame = &bm->fixPage(pageId, true);
+
+            // if there is enough space in the leaf (fanOut-2 at most)
+            if(leaf->num_keys <= FANOUT - 2){
+            	// insert key and value in the appropriate place
+                unsigned place = 0;
+                while((place < leaf->num_keys) && (leaf->keys[place]<key)) {
+                	++place;
+                }
+                for(unsigned i=leaf->num_keys; i > place; --i) {
+                    leaf->keys[i]= leaf->keys[i-1];
+                	leaf->values[i]= leaf->values[i-1];
+					memcpy(leaf->keys + (i + 1) * sizeof(key_type),
+                    	leaf->keys + (i) * sizeof(key_type),
+                    	(FANOUT - i) * sizeof(key_type)
+					);
+					memcpy(leaf->values + (i + 1) * sizeof(value_type),
+                    	leaf->values + (i) * sizeof(value_type),
+                    	(FANOUT - i) * sizeof(value_type)
+					);
+              	}
+                leaf->num_keys++;
+                leaf->keys[place]= key;
+                leaf->values[place]= value;
+				memcpy(leaf->keys + (place + 1) * sizeof(key_type),
+                	malloc(sizeof(key_type)),
+                    (FANOUT - place) * sizeof(key_type)
+				);
+				memcpy(leaf->values + (place + 1) * sizeof(value_type),
+                    malloc(sizeof(key_type)),
+                    (FANOUT - place) * sizeof(value_type)
+				);
+				bm->unfixPage(*frame, true);
+                return true;
+          	} else {
+            	// split leaf into two
+                LeafNode<key_type, value_type>* new_leaf = new LeafNode<key_type, value_type>();
+                new_leaf->num_keys = leaf->num_keys - (FANOUT/2);
+                for(unsigned j=0; j < new_leaf->num_keys; ++j) {
+                	new_leaf->keys[j] = leaf->keys[(FANOUT/2)+j];
+                    new_leaf->values[j] = leaf->values[(FANOUT/2)+j];
+					memcpy(new_leaf->keys + (j + 1) * sizeof(key_type),
+                    	new_leaf->keys + ((FANOUT/2) + j + 1) * sizeof(key_type),
+                    	(FANOUT - j) * sizeof(key_type)
+					);
+					memcpy(new_leaf->values + (j + 1) * sizeof(value_type),
+                    	new_leaf->values + ((FANOUT/2) + j + 1) * sizeof(value_type),
+                    	(FANOUT - j) * sizeof(value_type)
+					);
+                }
+                leaf->num_keys = (FANOUT / 2);
+                // insert entry into proper side
+                unsigned place = 0;
+                while((place < leaf->num_keys) && (leaf->keys[place]<key)) {
+                	++place;
+                }
+                if(place < (FANOUT / 2)){
+                	for(unsigned i=leaf->num_keys; i > place; --i) {
+                    	leaf->keys[i]= leaf->keys[i-1];
+                    	leaf->values[i]= leaf->values[i-1];
+						memcpy(leaf->keys + (i + 1) * sizeof(key_type),
+		                	leaf->keys + (i) * sizeof(key_type),
+		                	(FANOUT - i) * sizeof(key_type)
+						);
+						memcpy(leaf->values + (i + 1) * sizeof(value_type),
+		                	leaf->values + (i) * sizeof(value_type),
+		                	(FANOUT - i) * sizeof(value_type)
+						);
+                    }
+                    leaf->num_keys++;
+                    leaf->keys[place]= key;
+                    leaf->values[place]= value;
+					memcpy(leaf->keys + (place + 1) * sizeof(key_type),
+                		malloc(sizeof(key_type)),
+                    	(FANOUT - place) * sizeof(key_type)
+					);
+					memcpy(leaf->values + (place + 1) * sizeof(value_type),
+                    	malloc(sizeof(key_type)),
+                    	(FANOUT - place) * sizeof(value_type)
+					);
+                } else {
+                    place = place - (FANOUT / 2);
+                    for(unsigned i=new_leaf->num_keys; i > place; --i) {
+                    	new_leaf->keys[i]= new_leaf->keys[i-1];
+                    	new_leaf->values[i]= new_leaf->values[i-1];
+						memcpy(new_leaf->keys + (i + 1) * sizeof(key_type),
+		                	new_leaf->keys + (i) * sizeof(key_type),
+		                	(FANOUT - i) * sizeof(key_type)
+						);
+						memcpy(new_leaf->values + (i + 1) * sizeof(value_type),
+		                	new_leaf->values + (i) * sizeof(value_type),
+		                	(FANOUT - i) * sizeof(value_type)
+						);
+                    }
+                    new_leaf->num_keys++;
+                    new_leaf->keys[place]= key;
+                    new_leaf->values[place]= value;
+					memcpy(new_leaf->keys + (place + 1) * sizeof(key_type),
+                		malloc(sizeof(key_type)),
+                    	(FANOUT - place) * sizeof(key_type)
+					);
+					memcpy(new_leaf->values + (place + 1) * sizeof(value_type),
+                    	malloc(sizeof(key_type)),
+                    	(FANOUT - place) * sizeof(value_type)
+					);
+                }
+                // recSeparator: insert maximum of left page as separator into parent
+                	// if parent overflows
+                    // split parent
+                    // recSeparator()
+                // create a new root if needed
+				bm->unfixPage(*frame, true);
+				return true;
+        	}
+    	}
     }
 
     // TODO
