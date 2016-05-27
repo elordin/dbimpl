@@ -82,6 +82,50 @@ class BTree {
 		return false;
 	}
 
+	void copyMemory(LeafNode<key_type, value_type>* leaf, unsigned destinationDiff, unsigned sourceDiff, unsigned index){
+		memcpy(leaf->keys + destinationDiff * sizeof(key_type),
+            leaf->keys + sourceDiff * sizeof(key_type),
+        	(FANOUT - index) * sizeof(key_type)
+		);
+		memcpy(leaf->values + destinationDiff * sizeof(value_type),
+        	leaf->values + sourceDiff * sizeof(value_type),
+        	(FANOUT - index) * sizeof(value_type)
+		);
+	}
+
+	void copyMemory(InnerNode<key_type, value_type>* node, unsigned destinationDiff, unsigned sourceDiff, unsigned index){
+		memcpy(node->keys + destinationDiff * sizeof(key_type),
+            node->keys + sourceDiff * sizeof(key_type),
+        	(FANOUT - index) * sizeof(key_type)
+		);
+		memcpy(node->children + destinationDiff * sizeof(uint64_t),
+        	node->children + sourceDiff * sizeof(uint64_t),
+       		(FANOUT - index) * sizeof(uint64_t)
+		);
+	}
+
+	void allocateMemory(LeafNode<key_type, value_type>* leaf, unsigned destinationDiff, unsigned index){
+		memcpy(leaf->keys + destinationDiff * sizeof(key_type),
+        	malloc(sizeof(key_type)),
+            (FANOUT - index) * sizeof(key_type)
+		);
+		memcpy(leaf->values + destinationDiff * sizeof(value_type),
+        	malloc(sizeof(key_type)),
+       		(FANOUT - index) * sizeof(value_type)
+		);
+	}
+
+	void allocateMemory(InnerNode<key_type, value_type>* node, unsigned destinationDiff, unsigned index){
+		memcpy(node->keys + destinationDiff * sizeof(key_type),
+        	malloc(sizeof(key_type)),
+            (FANOUT - index) * sizeof(key_type)
+		);
+		memcpy(node->children + destinationDiff * sizeof(uint64_t),
+        	malloc(sizeof(uint64_t)),
+            (FANOUT - index) * sizeof(uint64_t)
+		);
+	}
+
     /**
      *  Inserts the given value with associated key into the tree.
      *  Throws an exception if the value was already in the tree.
@@ -89,7 +133,9 @@ class BTree {
     bool insert(key_type key, value_type value) {
         // lookup leaf in which key should be inserted
 		uint64_t pageId = this->rootPageId;
+		uint64_t parentPageId;
         LeafNode<key_type, value_type>* leaf;
+		InnerNode<key_type, value_type>* parent;
         BufferFrame* frame = (BufferFrame*) malloc(sizeof(BufferFrame));
 
         bool searching = true;
@@ -101,6 +147,8 @@ class BTree {
 				searching = false;
             } else {
                 InnerNode<key_type, value_type>* inner = reinterpret_cast<InnerNode<key_type, value_type>*>(data);
+				parent = inner;
+				parentPageId = pageId;
                 pageId = inner->getChildPageId(key);
                 bm->unfixPage(*frame, false);
             }
@@ -124,26 +172,12 @@ class BTree {
                 for(unsigned i=leaf->num_keys; i > place; --i) {
                     leaf->keys[i]= leaf->keys[i-1];
                 	leaf->values[i]= leaf->values[i-1];
-					memcpy(leaf->keys + (i + 1) * sizeof(key_type),
-                    	leaf->keys + (i) * sizeof(key_type),
-                    	(FANOUT - i) * sizeof(key_type)
-					);
-					memcpy(leaf->values + (i + 1) * sizeof(value_type),
-                    	leaf->values + (i) * sizeof(value_type),
-                    	(FANOUT - i) * sizeof(value_type)
-					);
+					this->copyMemory(leaf, i+1, i, i);
               	}
                 leaf->num_keys++;
                 leaf->keys[place]= key;
                 leaf->values[place]= value;
-				memcpy(leaf->keys + (place + 1) * sizeof(key_type),
-                	malloc(sizeof(key_type)),
-                    (FANOUT - place) * sizeof(key_type)
-				);
-				memcpy(leaf->values + (place + 1) * sizeof(value_type),
-                    malloc(sizeof(key_type)),
-                    (FANOUT - place) * sizeof(value_type)
-				);
+				this->allocateMemory(leaf, place+1, place);
 				bm->unfixPage(*frame, true);
                 return true;
           	} else {
@@ -153,14 +187,7 @@ class BTree {
                 for(unsigned j=0; j < new_leaf->num_keys; ++j) {
                 	new_leaf->keys[j] = leaf->keys[(FANOUT/2)+j];
                     new_leaf->values[j] = leaf->values[(FANOUT/2)+j];
-					memcpy(new_leaf->keys + (j + 1) * sizeof(key_type),
-                    	new_leaf->keys + ((FANOUT/2) + j + 1) * sizeof(key_type),
-                    	(FANOUT - j) * sizeof(key_type)
-					);
-					memcpy(new_leaf->values + (j + 1) * sizeof(value_type),
-                    	new_leaf->values + ((FANOUT/2) + j + 1) * sizeof(value_type),
-                    	(FANOUT - j) * sizeof(value_type)
-					);
+					this->copyMemory(new_leaf, j+1, (FANOUT/2)+j+1, j);
                 }
                 leaf->num_keys = (FANOUT / 2);
                 // insert entry into proper side
@@ -172,62 +199,98 @@ class BTree {
                 	for(unsigned i=leaf->num_keys; i > place; --i) {
                     	leaf->keys[i]= leaf->keys[i-1];
                     	leaf->values[i]= leaf->values[i-1];
-						memcpy(leaf->keys + (i + 1) * sizeof(key_type),
-		                	leaf->keys + (i) * sizeof(key_type),
-		                	(FANOUT - i) * sizeof(key_type)
-						);
-						memcpy(leaf->values + (i + 1) * sizeof(value_type),
-		                	leaf->values + (i) * sizeof(value_type),
-		                	(FANOUT - i) * sizeof(value_type)
-						);
+						this->copyMemory(leaf, i+1, i, i);
                     }
                     leaf->num_keys++;
                     leaf->keys[place]= key;
                     leaf->values[place]= value;
-					memcpy(leaf->keys + (place + 1) * sizeof(key_type),
-                		malloc(sizeof(key_type)),
-                    	(FANOUT - place) * sizeof(key_type)
-					);
-					memcpy(leaf->values + (place + 1) * sizeof(value_type),
-                    	malloc(sizeof(key_type)),
-                    	(FANOUT - place) * sizeof(value_type)
-					);
+					this->allocateMemory(leaf, place+1, place);
                 } else {
                     place = place - (FANOUT / 2);
                     for(unsigned i=new_leaf->num_keys; i > place; --i) {
                     	new_leaf->keys[i]= new_leaf->keys[i-1];
                     	new_leaf->values[i]= new_leaf->values[i-1];
-						memcpy(new_leaf->keys + (i + 1) * sizeof(key_type),
-		                	new_leaf->keys + (i) * sizeof(key_type),
-		                	(FANOUT - i) * sizeof(key_type)
-						);
-						memcpy(new_leaf->values + (i + 1) * sizeof(value_type),
-		                	new_leaf->values + (i) * sizeof(value_type),
-		                	(FANOUT - i) * sizeof(value_type)
-						);
+						this->copyMemory(new_leaf, i+1, i, i);
                     }
                     new_leaf->num_keys++;
                     new_leaf->keys[place]= key;
                     new_leaf->values[place]= value;
-					memcpy(new_leaf->keys + (place + 1) * sizeof(key_type),
-                		malloc(sizeof(key_type)),
-                    	(FANOUT - place) * sizeof(key_type)
-					);
-					memcpy(new_leaf->values + (place + 1) * sizeof(value_type),
-                    	malloc(sizeof(key_type)),
-                    	(FANOUT - place) * sizeof(value_type)
-					);
+					this->allocateMemory(new_leaf, place+1, place);
                 }
-                // recSeparator: insert maximum of left page as separator into parent
-                	// if parent overflows
-                    // split parent
-                    // recSeparator()
+				// insert maximum of left page as separator into parent, if this is not the root				
+				key_type separator = leaf->keys[leaf->num_keys-1];
+				if(!(this->rootPageId == frame->getPageNo())){
+					this->insertSeparator(parent, parentPageId, separator, frame->getPageNo());
+                	
+				}
                 // create a new root if needed
 				bm->unfixPage(*frame, true);
 				return true;
         	}
     	}
     }
+
+	bool insertSeparator(InnerNode<key_type, value_type>* node, uint64_t parentPageId, key_type separator, uint64_t pageId){
+		BufferFrame* frame = &bm->fixPage(parentPageId, true);		
+		unsigned place = 0;
+        while((place < node->num_keys) && (isSmaller(node->keys[place], separator))) {
+     		++place;
+       	}
+        for(unsigned i=node->num_keys; i > place; --i) {
+       		node->keys[i]= node->keys[i-1];
+            node->children[i]= node->children[i-1];
+			this->copyMemory(node, i+1, i, i);
+     	}
+        node->num_keys++;
+        node->keys[place]= separator;
+        node->children[place]= pageId;
+		this->allocateMemory(node, place+1, place);
+		// if parent overflows, split it
+		if(node->num_keys > FANOUT - 1){
+			// split parent
+			InnerNode<key_type, value_type>* new_node = new InnerNode<key_type, value_type>();
+            new_node->num_keys = node->num_keys - (FANOUT/2);
+            for(unsigned j=0; j < new_node->num_keys; ++j) {
+            	new_node->keys[j] = node->keys[(FANOUT/2)+j];
+                new_node->children[j] = node->children[(FANOUT/2)+j];
+				this->copyMemory(new_node, j+1, (FANOUT/2)+j+1, j);
+            }
+            node->num_keys = (FANOUT / 2);
+            // insert separator into proper side
+            unsigned place = 0;
+            while((place < node->num_keys) && (isSmaller(node->keys[place], separator))) {
+            	++place;
+            }
+            if(place < (FANOUT / 2)){
+            	for(unsigned i=node->num_keys; i > place; --i) {
+                	node->keys[i]= node->keys[i-1];
+                    node->children[i]= node->children[i-1];
+					this->copyMemory(node, i+1, i, i);
+               	}
+                node->num_keys++;
+                node->keys[place]= separator;
+                node->children[place]= pageId;
+				this->allocateMemory(node, place+1, place);
+            } else {
+                place = place - (FANOUT / 2);
+                for(unsigned i=new_node->num_keys; i > place; --i) {
+                	new_node->keys[i]= new_node->keys[i-1];
+                    new_node->children[i]= new_node->children[i-1];
+					this->copyMemory(new_node, i+1, i, i);
+               	}
+                new_node->num_keys++;
+                new_node->keys[place]= separator;
+                new_node->children[place]= pageId;
+				allocateMemory(new_node, place+1, place);
+            }
+			key_type separator = node->keys[node->num_keys-1];
+			if(!(this->rootPageId == frame->getPageNo())){
+				//this->insertSeparator(parent, parentPageId, separator, frame->getPageNo());
+			}
+		}
+		bm->unfixPage(*frame, true);
+        return true;		
+	}
 
     // TODO
     bool isLeaf(void* data) { return false; }
