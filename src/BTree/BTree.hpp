@@ -55,13 +55,13 @@ class BTree {
  private:
     uint64_t rootPageId;
     BufferManager* bm;
+	unsigned size = 1;
 
  public:
     BTree<key_type, value_type>(BufferManager* bm) : bm(bm) {
     };
 
-	//TODO
-	unsigned size(){}
+	unsigned getSize(){return size;}
 
 	//TODO
 	unsigned findEntryByIndex(LeafNode<key_type, value_type>* node, key_type key){}
@@ -133,9 +133,10 @@ class BTree {
     bool insert(key_type key, value_type value) {
         // lookup leaf in which key should be inserted
 		uint64_t pageId = this->rootPageId;
-		uint64_t parentPageId;
+		uint64_t parentPageIds[this->size - 2];
+		unsigned counter = 0;
         LeafNode<key_type, value_type>* leaf;
-		InnerNode<key_type, value_type>* parent;
+		InnerNode<key_type, value_type>* parents[this->size -2];
         BufferFrame* frame = (BufferFrame*) malloc(sizeof(BufferFrame));
 
         bool searching = true;
@@ -147,8 +148,9 @@ class BTree {
 				searching = false;
             } else {
                 InnerNode<key_type, value_type>* inner = reinterpret_cast<InnerNode<key_type, value_type>*>(data);
-				parent = inner;
-				parentPageId = pageId;
+				parents[counter] = inner;
+				parentPageIds[counter] = pageId;
+				counter++;
                 pageId = inner->getChildPageId(key);
                 bm->unfixPage(*frame, false);
             }
@@ -220,18 +222,29 @@ class BTree {
 				// insert maximum of left page as separator into parent, if this is not the root				
 				key_type separator = leaf->keys[leaf->num_keys-1];
 				if(!(this->rootPageId == frame->getPageNo())){
-					this->insertSeparator(parent, parentPageId, separator, frame->getPageNo());
+					this->insertSeparator(parents, parentPageIds, counter, separator, frame->getPageNo());
                 	
-				}
+				} else {
                 // create a new root if needed
+					//TODO: new_pageId					
+					uint64_t new_pageId = frame->getPageNo() + 100;					
+					bm->fixPage(new_pageId, true);
+					InnerNode<key_type, value_type>* new_root = new InnerNode<key_type, value_type>();
+					this->rootPageId = new_pageId;
+					this->size++;
+					new_root->keys[0] = separator;
+					new_root->children[0] = frame->getPageNo();
+					new_root->num_keys++;
+				}
 				bm->unfixPage(*frame, true);
 				return true;
         	}
     	}
     }
 
-	bool insertSeparator(InnerNode<key_type, value_type>* node, uint64_t parentPageId, key_type separator, uint64_t pageId){
-		BufferFrame* frame = &bm->fixPage(parentPageId, true);		
+	bool insertSeparator(InnerNode<key_type, value_type>* parents[], uint64_t parentPageIds[], unsigned currentParent, key_type separator, uint64_t pageId){	
+		BufferFrame* frame = &bm->fixPage(parentPageIds[currentParent], true);		
+		InnerNode<key_type, value_type>* node = parents[currentParent];		
 		unsigned place = 0;
         while((place < node->num_keys) && (isSmaller(node->keys[place], separator))) {
      		++place;
@@ -283,9 +296,20 @@ class BTree {
                 new_node->children[place]= pageId;
 				allocateMemory(new_node, place+1, place);
             }
-			key_type separator = node->keys[node->num_keys-1];
+			key_type new_separator = node->keys[node->num_keys-1];
 			if(!(this->rootPageId == frame->getPageNo())){
-				//this->insertSeparator(parent, parentPageId, separator, frame->getPageNo());
+				this->insertSeparator(parents, parentPageIds, currentParent-1, new_separator, frame->getPageNo());
+			} else {
+			// create a new root if needed
+				//TODO: new_pageId					
+				uint64_t new_pageId = frame->getPageNo() + 100;				
+				bm->fixPage(new_pageId, true);
+				InnerNode<key_type, value_type>* new_root = new InnerNode<key_type, value_type>();
+				this->rootPageId = new_pageId;
+				this->size++;
+				new_root->keys[0] = new_separator;
+				new_root->children[0] = frame->getPageNo();
+				new_root->num_keys++;
 			}
 		}
 		bm->unfixPage(*frame, true);
