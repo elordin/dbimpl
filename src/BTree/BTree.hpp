@@ -39,8 +39,8 @@ struct LeafNode {
 
 template<
     class Key,
-    class Value
-    //, class KeyEqual= std::equal_to<Key>
+    class Value,
+    class Comparator
 >
 class BTree {
 
@@ -58,10 +58,10 @@ class BTree {
 	unsigned size = 1;
 
  public:
-    BTree<key_type, value_type>(BufferManager* bm) : bm(bm) {
+    BTree<key_type, value_type, Comparator>(BufferManager* bm) : bm(bm) {
     };
 
-	unsigned getSize(){return size;}
+	unsigned getSize() { return size; }
 
 	//TODO
 	unsigned findEntryByIndex(LeafNode<key_type, value_type>* node, key_type key){}
@@ -79,7 +79,8 @@ class BTree {
          		return (key.first == key2.first) && (key.second < key2.second);
 			}
 		}*/
-		return false;
+        Comparator c = Comparator();
+		return c(key, key2);
 	}
 
 	void copyMemory(LeafNode<key_type, value_type>* leaf, unsigned destinationDiff, unsigned sourceDiff, unsigned index){
@@ -371,13 +372,12 @@ class BTree {
     }
 
 	//TODO: Adjust to test, use tid
-	Value* lookup(key_type key, TID tid){}
 
     /**
      *  Returns the value associated with key from the tree.
      *  Throws an exception if the value cannot be found.
      */
-    Value* lookup(key_type key) {
+	bool lookup(key_type key, value_type &tid){
         // Find node
         uint64_t pageId = this->rootPageId;
         LeafNode<key_type, value_type>* node;
@@ -396,11 +396,10 @@ class BTree {
             }
         }
         if (node->num_keys > 0 && node->contains(key)) {
-            Value* ret = (Value*) malloc(sizeof(Value));
-            *ret = node->values[node->indexOfKey(key)];
-            return ret;
+            tid = node->values[node->indexOfKey(key)];
+            return true;
         } else {
-            throw "Not found.";
+            return false;
         }
 
     }

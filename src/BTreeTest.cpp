@@ -9,6 +9,7 @@
 #include "BTree/BTree.hpp"
 #include "SlottedPages/TID.hpp"
 
+
 /* Comparator functor for uint64_t*/
 struct MyCustomUInt64Cmp {
    bool operator()(uint64_t a, uint64_t b) const {
@@ -70,7 +71,7 @@ void test(uint64_t n) {
    // Set up stuff, you probably have to change something here to match to your interfaces
    BufferManager* bm(new BufferManager(100));
    // ...
-   BTree<T, CMP> bTree(bm);
+   BTree<uint64_t, T, CMP> bTree(bm);
 
    // Insert values
    for (uint64_t i=0; i<n; ++i)
