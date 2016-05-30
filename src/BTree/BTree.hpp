@@ -9,7 +9,7 @@
 #include "../BufferManager/BufferManager.hpp"
 #include "../SlottedPages/TID.hpp"
 
-#define FANOUT 2
+#define FANOUT 4
 
 template<class Key, class Value>
 struct InnerNode {
@@ -40,7 +40,6 @@ struct LeafNode {
 template<
     class Key,
     class Value
-    //, class KeyEqual= std::equal_to<Key>
 >
 class BTree {
 
@@ -225,16 +224,16 @@ class BTree {
 					this->insertSeparator(parents, parentPageIds, counter, separator, frame->getPageNo());
                 	
 				} else {
-                // create a new root if needed
-					//TODO: new_pageId					
-					uint64_t new_pageId = frame->getPageNo() + 100;					
-					bm->fixPage(new_pageId, true);
+                // create a new root if needed					
+					uint64_t new_pageId = bm->addPage();					
+					BufferFrame* new_frame = &bm->fixPage(new_pageId, true);
 					InnerNode<key_type, value_type>* new_root = new InnerNode<key_type, value_type>();
 					this->rootPageId = new_pageId;
 					this->size++;
 					new_root->keys[0] = separator;
 					new_root->children[0] = frame->getPageNo();
 					new_root->num_keys++;
+					bm->unfixPage(*new_frame, true);
 				}
 				bm->unfixPage(*frame, true);
 				return true;
@@ -301,15 +300,15 @@ class BTree {
 				this->insertSeparator(parents, parentPageIds, currentParent-1, new_separator, frame->getPageNo());
 			} else {
 			// create a new root if needed
-				//TODO: new_pageId					
-				uint64_t new_pageId = frame->getPageNo() + 100;				
-				bm->fixPage(new_pageId, true);
+				uint64_t new_pageId = bm->addPage();					
+				BufferFrame* new_frame = &bm->fixPage(new_pageId, true);			
 				InnerNode<key_type, value_type>* new_root = new InnerNode<key_type, value_type>();
 				this->rootPageId = new_pageId;
 				this->size++;
 				new_root->keys[0] = new_separator;
 				new_root->children[0] = frame->getPageNo();
 				new_root->num_keys++;
+				bm->unfixPage(*new_frame, true);
 			}
 		}
 		bm->unfixPage(*frame, true);
@@ -370,8 +369,16 @@ class BTree {
         }
     }
 
-	//TODO: Adjust to test, use tid
-	Value* lookup(key_type key, TID tid){}
+	//Lookup adjusted to test
+	bool lookup(key_type key, TID tid){
+		Value* result = this->lookup(key);	
+		uint64_t result_tid = reinterpret_cast<uint64_t>(result);
+		if(tid.getTID() == result_tid){
+			return true;
+		} else {
+			return false;
+		}
+	}
 
     /**
      *  Returns the value associated with key from the tree.

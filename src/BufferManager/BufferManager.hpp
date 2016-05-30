@@ -75,4 +75,6 @@ class BufferManager {
     off_t getPageOffset (uint64_t pageId);
 
     uint getPageCount();
+
+	uint64_t addPage();
 };
