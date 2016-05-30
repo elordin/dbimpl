@@ -75,7 +75,7 @@ void test(uint64_t n) {
    // Insert values
    for (uint64_t i=0; i<n; ++i)
       bTree.insert(getKey<T>(i),static_cast<TID>(i*i));
-   assert(bTree.size()==n);
+   assert(bTree.getSize()==n);
 
    // Check if they can be retrieved
    for (uint64_t i=0; i<n; ++i) {
@@ -103,7 +103,7 @@ void test(uint64_t n) {
    // Delete everything
    for (uint64_t i=0; i<n; ++i)
       bTree.erase(getKey<T>(i));
-   assert(bTree.size()==0);
+   assert(bTree.getSize()==0);
 }
 
 int main(int argc, char* argv[]) {
