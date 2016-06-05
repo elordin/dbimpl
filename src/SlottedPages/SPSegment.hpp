@@ -53,6 +53,8 @@ class SPSegment {
      */
 	bool update(TID tid, const Record& r);
 
+	uint64_t getPageSize(){ return pageSize;}
+
     /**
      *  Deconstructor
      */

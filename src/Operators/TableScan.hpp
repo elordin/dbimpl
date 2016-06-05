@@ -8,13 +8,15 @@
 
 class TableScan {
  private:
-	SPSegment relation;
+	SPSegment input;
+	uint64_t tid;
+	uint64_t limit;
  public:
     
-	// which datatype is a relation??
+	// right datatype??
     TableScan(SPSegment relation);
 
-	void open();
+	void open(SPSegment relation);
 
 	// reads the next tuple, if there is any
 	bool next();
