@@ -16,7 +16,10 @@ BINDIR = ./bin
 FILES = BufferManager/BufferManager.cpp BufferManager/BufferFrame.cpp BufferManager/HashTable.cpp \
 		SlottedPages/SPSegment.cpp SlottedPages/TID.cpp SlottedPages/Record.cpp \
 		BTree/BTree.cpp \
-		BTreeTest.cpp
+		Operators/Register.cpp Operators/HashJoin.cpp Operators/Print.cpp Operators/Projection.cpp \
+		Operators/Select.cpp Operators/TableScan.cpp \
+		operatorsTest.cpp
+		#BTreeTest.cpp
 		#slottedTest.cpp
 		#buffertest.cpp \
 SRC = $(FILES:%=$(SRCDIR)/%)
