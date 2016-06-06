@@ -4,8 +4,9 @@
 #include <vector>
 
 #include "Register.hpp"
+#include "Operator.cpp"
 
-class HashJoin {
+class HashJoin : public Operator{
  private:
 	
  public:

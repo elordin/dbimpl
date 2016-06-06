@@ -4,8 +4,9 @@
 #include <vector>
 
 #include "Register.hpp"
+#include "Operator.cpp"
 
-class Projection {
+class Projection : public Operator{
  private:
 	
  public:

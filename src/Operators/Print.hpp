@@ -4,8 +4,9 @@
 #include <vector>
 
 #include "Register.hpp"
+#include "Operator.cpp"
 
-class Print {
+class Print : public Operator{
  private:
 	
  public:

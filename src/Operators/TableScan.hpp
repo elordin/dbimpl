@@ -5,8 +5,9 @@
 #include "../SlottedPages/SPSegment.hpp"
 
 #include "Register.hpp"
+#include "Operator.cpp"
 
-class TableScan {
+class TableScan : public Operator{
  private:
 	SPSegment input;
 	uint64_t tid;

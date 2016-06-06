@@ -2,18 +2,23 @@
 
 #include <cstdint>
 #include <vector>
+#include <string>
+#include <string.h>
 
 #include "Register.hpp"
+#include "Operator.cpp"
 
-class Select {
+class Select : public Operator {
  private:
-	
+	Operator* input;
+	Register* attribute;
+	std::string value;
  public:
     
-	//TODO: initialized with an input operator, a register ID and a constant.
+	// initialized with an input operator, a register ID and a constant.
     Select();
 
-	void open();
+	void open(Operator* input, Register* attribute, std::string value);
 
 	bool next();
 
