@@ -11,6 +11,7 @@ class TableScan {
 	SPSegment input;
 	uint64_t tid;
 	uint64_t limit;
+	const char* currentTuple;
  public:
     
 	// right datatype??

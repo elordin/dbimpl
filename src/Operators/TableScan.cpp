@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <vector>
 
 #include "TableScan.hpp"
 
@@ -19,16 +20,21 @@ bool TableScan::next(){
 	if(tid >= limit-1){
 		return false;
 	} else {
-		tid++;
 		// load tuple t from in at position tid
-		input.lookup(tid);
+		currentTuple = input.lookup(tid).getData();
+		tid++;
 		return true;
 	}
 }
 
 vector<Register*> TableScan::getOutput(){
 	// read tuple from in at position tid
-	// something like: input.lookup(tid).getData();
+	next();
+	Register r;
+	r.setString(currentTuple);
+	//TODO: get more than 1 attribute
+	vector<Register*> vector = {&r};
+	return vector;
 }
 
 void TableScan::close(){
