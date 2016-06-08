@@ -6,9 +6,10 @@
 
 class Register {
  private:
-	
+ 	size_t len;
+	char* data;
  public:
-    
+
     Register();
 
 	// retrieve an integer
@@ -16,10 +17,10 @@ class Register {
 
 	// store an integer
 	void setInteger(uint64_t value);
-		
+
 	// retrieve a string
 	std::string getString();
-	
+
 	// store a string
 	void setString(const std::string& value);
 
@@ -30,6 +31,10 @@ class Register {
 
 	// Hash-operator for a string
 	uint64_t hash(std::string& value);
-    
+
+	bool operator==(Register &that);
+
+	bool operator==(Register *that);
+
     ~Register();
 };
