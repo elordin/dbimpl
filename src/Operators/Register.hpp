@@ -8,6 +8,7 @@ class Register {
  private:
  	size_t len;
 	char* data;
+	std::hash<std::string> hashfun;
  public:
 
     Register();
@@ -24,14 +25,11 @@ class Register {
 	// store a string
 	void setString(const std::string& value);
 
-	//TODO: operator ==, <
 
 	// Hash-operator for an integer
-	uint64_t hash(uint64_t value);
+	uint64_t hash();
 
-	// Hash-operator for a string
-	uint64_t hash(std::string& value);
-
+	//TODO: operator ==, <
 	bool operator==(Register &that);
 
 	bool operator==(Register *that);

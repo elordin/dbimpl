@@ -6,7 +6,8 @@
 
 using namespace std;
 
-Register::Register(): len(0) {
+Register::Register()
+: len(0) {
 
 }
 
@@ -33,12 +34,8 @@ void Register::setString(const string& value){
     len = value.length() * sizeof(char);
 }
 
-uint64_t Register::hash(uint64_t value){
-
-}
-
-uint64_t Register::hash(string& value){
-
+uint64_t Register::hash(){
+    return this->hashfun(string(this->data));
 }
 
 bool Register::operator==(Register &that) {
