@@ -17,7 +17,11 @@ uint64_t Register::getInteger(){
 }
 
 void Register::setInteger(uint64_t value){
-    this->data = (char*) malloc(sizeof(uint64_t) + sizeof(char));
+    if (this->len == 0) {
+        this->data = (char*) malloc(sizeof(uint64_t) + sizeof(char));
+    } else {
+        this->data = (char*) realloc(sizeof(uint64_t) + sizeof(char));
+    }
     memcpy(this->data, &value, sizeof(value));
     this->data[sizeof(uint64_t)] = '\0';
     len = sizeof(uint64_t);
@@ -28,7 +32,11 @@ string Register::getString(){
 }
 
 void Register::setString(const string& value){
-    this->data = (char*) malloc(value.length() * sizeof(char) + sizeof(char));
+    if (this->len == 0) {
+        this->data = (char*) malloc(value.length() * sizeof(char) + sizeof(char));
+    } else {
+        this->data = (char*) realloc(value.length() * sizeof(char) + sizeof(char));
+    }
     memcpy(this->data, value.c_str(), value.length() * sizeof(char));
     this->data[value.length()] = '\0';
     len = value.length() * sizeof(char);
