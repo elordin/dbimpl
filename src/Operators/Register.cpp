@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <string.h>
 
@@ -20,7 +21,7 @@ void Register::setInteger(uint64_t value){
     if (this->len == 0) {
         this->data = (char*) malloc(sizeof(uint64_t) + sizeof(char));
     } else {
-        this->data = (char*) realloc(sizeof(uint64_t) + sizeof(char));
+        this->data = (char*) realloc(this->data, sizeof(uint64_t) + sizeof(char));
     }
     memcpy(this->data, &value, sizeof(value));
     this->data[sizeof(uint64_t)] = '\0';
@@ -35,7 +36,7 @@ void Register::setString(const string& value){
     if (this->len == 0) {
         this->data = (char*) malloc(value.length() * sizeof(char) + sizeof(char));
     } else {
-        this->data = (char*) realloc(value.length() * sizeof(char) + sizeof(char));
+        this->data = (char*) realloc(this->data, value.length() * sizeof(char) + sizeof(char));
     }
     memcpy(this->data, value.c_str(), value.length() * sizeof(char));
     this->data[value.length()] = '\0';
