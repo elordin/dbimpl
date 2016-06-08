@@ -10,8 +10,7 @@ TableScan::TableScan(SPSegment relation)
 
 }
 
-void TableScan::open(SPSegment relation){
-	input = relation;
+void TableScan::open() {
 	tid = 0;
 	limit = input.getPageSize();
 }
@@ -28,8 +27,6 @@ bool TableScan::next(){
 }
 
 vector<Register*> TableScan::getOutput(){
-	// read tuple from in at position tid
-	next();
 	Register r;
 	r.setString(currentTuple);
 	//TODO: get more than 1 attribute
@@ -37,10 +34,10 @@ vector<Register*> TableScan::getOutput(){
 	return vector;
 }
 
-void TableScan::close(){
+void TableScan::close() {
 
 }
-    
+
 TableScan::~TableScan(){
 
 }

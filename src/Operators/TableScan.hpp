@@ -14,11 +14,10 @@ class TableScan : public Operator{
 	uint64_t limit;
 	const char* currentTuple;
  public:
-    
-	// right datatype??
+
     TableScan(SPSegment relation);
 
-	void open(SPSegment relation);
+	void open();
 
 	// reads the next tuple, if there is any
 	bool next();
@@ -27,6 +26,6 @@ class TableScan : public Operator{
 	std::vector<Register*> getOutput();
 
 	void close();
-    
+
     ~TableScan();
 };
