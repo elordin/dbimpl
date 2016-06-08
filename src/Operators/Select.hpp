@@ -14,17 +14,17 @@ class Select : public Operator {
 	Register* attribute;
 	std::string value;
  public:
-    
-	// initialized with an input operator, a register ID and a constant.
-    Select();
 
-	void open(Operator* input, Register* attribute, std::string value);
+	// initialized with an input operator, a register ID and a constant.
+    Select(Operator* input, Register* attribute, std::string value);
+
+	void open();
 
 	bool next();
 
 	std::vector<Register*> getOutput();
 
 	void close();
-    
+
     ~Select();
 };
