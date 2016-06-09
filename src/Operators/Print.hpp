@@ -8,11 +8,11 @@
 
 class Print : public Operator{
  private:
-	
+    Operator* input;
  public:
-    
+
 	//TODO: initialized with an input operator and an output stream
-    Print();
+    Print(Operator* input);
 
 	void open();
 
@@ -22,6 +22,6 @@ class Print : public Operator{
 	std::vector<Register*> getOutput();
 
 	void close();
-    
+
     ~Print();
 };

@@ -27,13 +27,13 @@ void Select::open() {
 
 bool Select::next(){
     while(input->next()) {
-        std::vector<Register*> tuples = input->getOutput();
-        if (tuples.size() < this->registerId) {
+        std::vector<Register*> tuple = input->getOutput();
+        if (tuple.size() < this->registerId) {
             throw "Unknown attribute index in SELECT clause.";
         }
 
-        Register* tuple = tuples[this->registerId];
-        if (*this->value == *tuple) {
+        Register* comparisonValue = tuple[this->registerId];
+        if (*this->value == *comparisonValue) {
             return true;
         }
     }

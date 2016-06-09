@@ -34,5 +34,7 @@ class Register {
 
 	bool operator==(Register *that);
 
+	std::string toString();
+
     ~Register();
 };

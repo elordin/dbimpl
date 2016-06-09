@@ -5,10 +5,9 @@
 
 using namespace std;
 
-Projection::Projection(Operator* input, std::vector<unsigned> ids) {
-    this->input = input;
-    this->ids = ids;
-}
+Projection::Projection(Operator* input, std::vector<unsigned> ids)
+: input(input),
+  ids(ids) {}
 
 void Projection::open() {
     this->input->open();
