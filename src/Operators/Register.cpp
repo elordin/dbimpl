@@ -12,20 +12,19 @@ Register::Register()
 
 }
 
-uint64_t Register::getInteger(){
-    uint64_t v = *reinterpret_cast<uint64_t*>(this->data);
-    return v;
+long Register::getInteger(){
+    return *reinterpret_cast<long*>(this->data);
 }
 
-void Register::setInteger(uint64_t value){
+void Register::setInteger(long value){
     if (this->len == 0) {
-        this->data = (char*) malloc(sizeof(uint64_t) + sizeof(char));
+        this->data = (char*) malloc(sizeof(long) + sizeof(char));
     } else {
-        this->data = (char*) realloc(this->data, sizeof(uint64_t) + sizeof(char));
+        this->data = (char*) realloc(this->data, sizeof(long) + sizeof(char));
     }
     memcpy(this->data, &value, sizeof(value));
-    this->data[sizeof(uint64_t)] = '\0';
-    len = sizeof(uint64_t);
+    this->data[sizeof(long)] = '\0';
+    len = sizeof(long);
 }
 
 string Register::getString(){

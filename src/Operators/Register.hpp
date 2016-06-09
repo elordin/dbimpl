@@ -14,10 +14,10 @@ class Register {
     Register();
 
 	// retrieve an integer
-	uint64_t getInteger();
+	long getInteger();
 
 	// store an integer
-	void setInteger(uint64_t value);
+	void setInteger(long value);
 
 	// retrieve a string
 	std::string getString();
