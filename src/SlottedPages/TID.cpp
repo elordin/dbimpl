@@ -13,10 +13,6 @@ uint64_t TID::getSlot() {
     return this->tid & 0x00000000000000FFL;
 }
 
-uint64_t TID::getTID() {
-    return this->tid;
-}
-
 TID::~TID(){
 
 }

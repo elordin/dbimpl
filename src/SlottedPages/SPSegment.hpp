@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+
 #include "TID.hpp"
 #include "Record.hpp"
 #include "../BufferManager/BufferManager.hpp"

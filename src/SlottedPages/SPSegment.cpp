@@ -16,6 +16,7 @@ SPSegment::SPSegment(uint64_t segmentId, BufferManager* bm, uint64_t pageSize)
 }
 
 SlottedPage* SPSegment::addPage() {
+/*
     this->lastPage += 1;
     uint64_t pageId = (this->segmentId << 48) | (this->lastPage << 6);
     BufferFrame frame = bm->fixPage(pageId, true);
@@ -25,9 +26,11 @@ SlottedPage* SPSegment::addPage() {
     memcpy(frame.getData(), page, PAGE_SIZE);
 
     return reinterpret_cast<SlottedPage*>(frame.getData());
+*/
 }
 
 SlottedPage* SPSegment::getFreeSpace(unsigned spaceRequired) {
+/*
     for (uint64_t i = 0; i < this->lastPage; i++) {
         uint64_t pageId = (this->segmentId << 48) | (i << 6);
 
@@ -38,11 +41,12 @@ SlottedPage* SPSegment::getFreeSpace(unsigned spaceRequired) {
         bm->unfixPage(frame, false);
     }
     return this->addPage();
+*/
 }
 
 
 TID SPSegment::insert(const Record& r){
-
+/*
 	// Find page with enough space for r
     SlottedPage* page = this->getFreeSpace(r.getLen());
 
@@ -54,9 +58,11 @@ TID SPSegment::insert(const Record& r){
     // Return TID
 	Slot* slot = page->getSlot(offset);
 	return slot->tid;
+*/
 }
 
 bool SPSegment::remove(TID tid){
+/*
     BufferFrame frame = bm->fixPage(tid.getPage(), true);
 
     SlottedPage* page = reinterpret_cast<SlottedPage*>(frame.getData());
@@ -67,9 +73,11 @@ bool SPSegment::remove(TID tid){
     bm->unfixPage(frame, true);
 
     return true;
+*/
 }
 
 Record SPSegment::lookup(TID tid) {
+/*
     BufferFrame frame = bm->fixPage(tid.getPage(), true);
 
     SlottedPage* page = reinterpret_cast<SlottedPage*>(frame.getData());
@@ -79,9 +87,11 @@ Record SPSegment::lookup(TID tid) {
         return Record(0, nullptr); // Slot is empty, return empty record
     else
         return Record(slot->length, slot->getRecord()->getData());
+*/
 }
 
 bool SPSegment::update(TID tid, const Record& r){
+/*
 	Record r_old = this->lookup(tid);
 	unsigned len_old = r_old.getLen();
 	unsigned len_new = r.getLen();
@@ -108,8 +118,7 @@ bool SPSegment::update(TID tid, const Record& r){
 	}
 	bm->unfixPage(frame, true);
 	return true;
+*/
 }
 
-SPSegment::~SPSegment() {
-    delete bm;
-}
+SPSegment::~SPSegment() {}

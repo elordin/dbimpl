@@ -378,7 +378,7 @@ class BTree {
 	bool lookup(key_type key, TID tid){
 		Value* result = this->lookup(key);
 		uint64_t result_tid = reinterpret_cast<uint64_t>(result);
-		if(tid.getTID() == result_tid){
+		if(tid.tid == result_tid){
 			return true;
 		} else {
 			return false;
