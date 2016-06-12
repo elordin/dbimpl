@@ -5,39 +5,29 @@
 
 using namespace std;
 
-TableScan::TableScan(SPSegment relation)
+TableScan::TableScan(SPSegment* relation)
 	: input(relation){
 
 }
 
 void TableScan::open() {
 	tid = 0;
-	limit = input.getPageSize();
+	// limit = TODO;
 }
 
-bool TableScan::next(){
-	if(tid >= limit-1){
-		return false;
-	} else {
-		// load tuple t from in at position tid
-		currentTuple = input.lookup(tid).getData();
-		tid++;
+bool TableScan::next() {
+	if (tid < limit) {
+		currentTuple = input->lookup(tid++).getData();
 		return true;
+	} else {
+		return false;
 	}
 }
 
-vector<Register*> TableScan::getOutput(){
-	Register r;
-	r.setString(currentTuple);
-	//TODO: get more than 1 attribute
-	vector<Register*> vector = {&r};
-	return vector;
+vector<Register*> TableScan::getOutput() {
+	return this->input->toRegisterVector(this->currentTuple);
 }
 
-void TableScan::close() {
+void TableScan::close() {}
 
-}
-
-TableScan::~TableScan(){
-
-}
+TableScan::~TableScan() {}

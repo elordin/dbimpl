@@ -4,11 +4,19 @@
 #include <string>
 #include <string.h>
 
+enum RegisterType {
+	TINT,
+	TSTRING,
+	TANY
+};
+
+
 class Register {
  private:
  	size_t len;
 	char* data;
 	std::hash<std::string> hashfun;
+	RegisterType type;
  public:
 
     Register();

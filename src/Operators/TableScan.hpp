@@ -9,13 +9,13 @@
 
 class TableScan : public Operator{
  private:
-	SPSegment input;
+	SPSegment* input;
 	uint64_t tid;
 	uint64_t limit;
 	const char* currentTuple;
  public:
 
-    TableScan(SPSegment relation);
+    TableScan(SPSegment* relation);
 
 	void open();
 

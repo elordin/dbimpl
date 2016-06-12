@@ -7,8 +7,9 @@
 
 using namespace std;
 
+
 Register::Register()
-: len(0) {
+: len(0), type(TANY) {
 
 }
 
@@ -25,6 +26,7 @@ void Register::setInteger(long value){
     memcpy(this->data, &value, sizeof(value));
     this->data[sizeof(long)] = '\0';
     len = sizeof(long);
+    this->type = TINT;
 }
 
 string Register::getString(){
@@ -40,6 +42,7 @@ void Register::setString(const string& value){
     memcpy(this->data, value.c_str(), value.length() * sizeof(char));
     this->data[value.length()] = '\0';
     len = value.length() * sizeof(char);
+    this->type = TSTRING;
 }
 
 uint64_t Register::hash(){
@@ -52,6 +55,19 @@ bool Register::operator==(Register &that) {
 
 bool Register::operator==(Register *that) {
     return strcmp(this->data, that->getString().c_str());
+}
+
+std::string Register::toString() {
+    switch (this->type) {
+        case TINT:
+            return std::to_string(*(reinterpret_cast<int*>(this->data)));
+            break;
+        case TANY:
+        case TSTRING:
+        default:
+            return std::string(this->data);
+            break;
+    }
 }
 
 Register::~Register(){

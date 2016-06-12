@@ -8,7 +8,6 @@
 class Record {
    unsigned len;
    char* data;
-
 public:
    // Assignment Operator: deleted
    Record& operator=(Record& rhs) = delete;

@@ -2,109 +2,101 @@
 #include <cstdio>
 #include <iostream>
 #include <cstdlib>
+
 #include "SPSegment.hpp"
 #include "SlottedPage.hpp"
 #include "SlottedPage.cpp"
 
 using namespace std;
 
-SPSegment::SPSegment(uint64_t segmentId, BufferManager* bm, uint64_t pageSize)
+
+SPSegment::SPSegment(uint64_t segmentId, BufferManager* bm)
 	: bm(bm),
-	  pageSize(pageSize),
       lastPage(0),
-      segmentId(segmentId) {
-}
-
-SlottedPage* SPSegment::addPage() {
-/*
-    this->lastPage += 1;
-    uint64_t pageId = (this->segmentId << 48) | (this->lastPage << 6);
-    BufferFrame frame = bm->fixPage(pageId, true);
-
-
-    SlottedPage* page = new SlottedPage(pageId);
-    memcpy(frame.getData(), page, PAGE_SIZE);
-
-    return reinterpret_cast<SlottedPage*>(frame.getData());
-*/
-}
-
-SlottedPage* SPSegment::getFreeSpace(unsigned spaceRequired) {
-/*
-    for (uint64_t i = 0; i < this->lastPage; i++) {
-        uint64_t pageId = (this->segmentId << 48) | (i << 6);
-
-        BufferFrame frame = bm->fixPage(pageId, true);
-        SlottedPage* sp = reinterpret_cast<SlottedPage*>(frame.getData());
-        if (sp->getFreeSpaceOnPage() > spaceRequired)
-            return sp;
-        bm->unfixPage(frame, false);
-    }
-    return this->addPage();
-*/
-}
+      segmentId(segmentId),
+      lastTID(0),
+      fsi(std::map<uint64_t, unsigned>()) {}
 
 
 TID SPSegment::insert(const Record& r){
-/*
-	// Find page with enough space for r
-    SlottedPage* page = this->getFreeSpace(r.getLen());
 
-    // Reorder record ?
+	// Find page with enough space for r
+    uint64_t pageId = this->lastPage + 1;
+
+    for (auto it = this->fsi.rbegin(); it != this->fsi.rend(); it++) {
+        if (it->second >= r.getLen()) {
+            pageId = it->first;
+            break;
+        }
+    }
+
+    // If necessary, create new SlottedPage
+    BufferFrame frame = bm->fixPage(pageId, true);
+    SlottedPage* page = reinterpret_cast<SlottedPage*>(frame.getData());
+    if (pageId > this->lastPage) {
+        *page = SlottedPage();
+        this->lastPage++;
+    }
+
+    // TODO Reorder record ?
 
     // Write to page
-    uint64_t offset = page->insert(r);
+    unsigned slotNum = page->insert(r);
 
-    // Return TID
-	Slot* slot = page->getSlot(offset);
-	return slot->tid;
-*/
+    bm->unfixPage(frame, true);
+    return TID(pageId, slotNum);
 }
 
 bool SPSegment::remove(TID tid){
-/*
-    BufferFrame frame = bm->fixPage(tid.getPage(), true);
 
+    // TODO assert(tid.getPage() is part of this segment);
+
+    BufferFrame frame = bm->fixPage(tid.getPage(), true);
     SlottedPage* page = reinterpret_cast<SlottedPage*>(frame.getData());
 
-    page->remove(tid.getSlot());
-    page->recompress();
+    unsigned space = page->remove(tid.getSlot());
+
+    // Update FSI
+    this->fsi[tid.getPage()] = space;
 
     bm->unfixPage(frame, true);
-
     return true;
-*/
 }
 
 Record SPSegment::lookup(TID tid) {
-/*
-    BufferFrame frame = bm->fixPage(tid.getPage(), true);
+    // TODO assert(tid.getPage() is part of this segment);
+
+    BufferFrame frame = bm->fixPage(tid.getPage(), false);
 
     SlottedPage* page = reinterpret_cast<SlottedPage*>(frame.getData());
+
     Slot* slot = page->getSlot(tid.getSlot());
 
-    if (slot->length == 0 && slot->offset == 0)
+    if (slot->length() == 0 && slot->offset() == 0) {
+        bm->unfixPage(frame, false);
         return Record(0, nullptr); // Slot is empty, return empty record
-    else
-        return Record(slot->length, slot->getRecord()->getData());
-*/
+    } else {
+        bm->unfixPage(frame, false);
+        return Record(slot->length(), slot->getRecord()->getData());
+    }
 }
 
 bool SPSegment::update(TID tid, const Record& r){
-/*
+
 	Record r_old = this->lookup(tid);
 	unsigned len_old = r_old.getLen();
 	unsigned len_new = r.getLen();
+
 	BufferFrame frame = bm->fixPage(tid.getPage(), true);
     SlottedPage* page = reinterpret_cast<SlottedPage*>(frame.getData());
 	// If size doesn't change, use memcpy
 	if(len_old == len_new){
-		memcpy(page->getRecordPtr(tid.getSlot()), &r, r.getLen());
+		memcpy(page->getSlot(tid.getSlot())->getRecord(), &r, r.getLen());
 	} else if(len_old > len_new){
-		memcpy(page->getRecordPtr(tid.getSlot()), &r, r.getLen());
+		memcpy(page->getSlot(tid.getSlot())->getRecord(), &r, r.getLen());
         page->recompress();
 	} else {
-		unsigned freeSpaceOnPage = page->getFreeSpaceOnPage();
+		unsigned freeSpaceOnPage = page->freeSpace();
     	if (freeSpaceOnPage >= len_new) {
 			page->remove(tid.getSlot());
 			page->recompress();
@@ -118,7 +110,14 @@ bool SPSegment::update(TID tid, const Record& r){
 	}
 	bm->unfixPage(frame, true);
 	return true;
-*/
 }
+
+
+std::vector<Register*> SPSegment::toRegisterVector(const char* data) {
+
+}
+
+Schema::Relation SPSegment::relation() {}
+
 
 SPSegment::~SPSegment() {}
