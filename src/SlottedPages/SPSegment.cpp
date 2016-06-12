@@ -181,6 +181,8 @@ std::vector<Register*> SPSegment::toRegisterVector(const char* data) {
         }
         result.push_back(reg);
     }
+
+    return result;
 }
 
 Schema::Relation SPSegment::relation() {
