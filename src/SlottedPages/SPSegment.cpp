@@ -3,6 +3,8 @@
 #include <iostream>
 #include <cstdlib>
 
+
+#include "../parser/Types.hpp"
 #include "SPSegment.hpp"
 #include "SlottedPage.hpp"
 #include "SlottedPage.cpp"
@@ -36,12 +38,15 @@ TID SPSegment::insert(const Record& r){
     if (pageId > this->lastPage) {
         *page = SlottedPage();
         this->lastPage++;
+        if (lastPage > 1l << 48) throw "Max page number reached.";
     }
 
     // TODO Reorder record ?
 
     // Write to page
     unsigned slotNum = page->insert(r);
+
+    // TODO update FSI
 
     bm->unfixPage(frame, true);
     return TID(pageId, slotNum);
@@ -84,28 +89,54 @@ Record SPSegment::lookup(TID tid) {
 bool SPSegment::update(TID tid, const Record& r){
 
 	Record r_old = this->lookup(tid);
+
 	unsigned len_old = r_old.getLen();
 	unsigned len_new = r.getLen();
 
 	BufferFrame frame = bm->fixPage(tid.getPage(), true);
+
     SlottedPage* page = reinterpret_cast<SlottedPage*>(frame.getData());
+
 	// If size doesn't change, use memcpy
 	if(len_old == len_new){
 		memcpy(page->getSlot(tid.getSlot())->getRecord(), &r, r.getLen());
 	} else if(len_old > len_new){
 		memcpy(page->getSlot(tid.getSlot())->getRecord(), &r, r.getLen());
-        page->recompress();
+        // TODO Update freeSpace
+        // TODO update FSI
 	} else {
 		unsigned freeSpaceOnPage = page->freeSpace();
     	if (freeSpaceOnPage >= len_new) {
 			page->remove(tid.getSlot());
-			page->recompress();
-			uint64_t offset = page->insert(r);
+			page->insert(r);
     	} else {
-			page->remove(tid.getSlot());
-    		page->recompress();
-			TID new_tid = insert(r);
-            // TODO: indirection to new position
+			// TODO: indirection to new position
+            uint64_t sndPageId = this->lastPage + 1;
+            for (auto it = this->fsi.rbegin(); it != this->fsi.rend(); it++) {
+                if (it->second >= r.getLen()) {
+                    sndPageId = it->first;
+                    break;
+                }
+            }
+            BufferFrame sndFrame = bm->fixPage(sndPageId, true);
+            SlottedPage* sndPage = reinterpret_cast<SlottedPage*>(sndFrame.getData());
+            if (sndPageId > this->lastPage) {
+                *sndPage = SlottedPage();
+                this->lastPage++;
+                if (lastPage > 1l << 48) throw "Max page number reached.";
+            }
+
+            Slot* fstSlot = page->getSlot(tid.getSlot());
+            unsigned fstSpace = page->remove(tid);
+            // TODO update FSI
+            assert(fstSlot->isEmpty());
+
+            unsigned sndSlotNum = sndPage->insert(r);
+            // TODO update FSI
+
+            *fstSlot = Slot(TID(sndPageId, sndSlotNum));
+
+            bm->unfixPage(sndFrame, true);
 		}
 	}
 	bm->unfixPage(frame, true);
@@ -114,10 +145,48 @@ bool SPSegment::update(TID tid, const Record& r){
 
 
 std::vector<Register*> SPSegment::toRegisterVector(const char* data) {
+    Schema::Relation relation = this->relation();
 
+    unsigned nextVarLength = 0;
+    unsigned offset = 0;
+    vector<Register*> result = vector<Register*>();
+
+    for (auto attr = relation.attributes.begin(); attr != relation.attributes.end(); attr++) {
+        switch ((*attr).type) {
+            case Types::Tag::Integer:
+                nextVarLength += sizeof(int);
+                break;
+            case Types::Tag::Char:
+                nextVarLength += sizeof(unsigned);
+                break;
+        }
+    }
+
+    for (auto attr = relation.attributes.begin(); attr != relation.attributes.end(); attr++) {
+        Register* reg = new Register();
+
+        switch ((*attr).type) {
+            case Types::Tag::Integer:
+                reg->setInteger(*(reinterpret_cast<const int*>(data + offset)));
+
+                offset += sizeof(int);
+                break;
+            case Types::Tag::Char:
+                const char* str = data + nextVarLength;
+                const unsigned endOffset = *(reinterpret_cast<const unsigned*>(data + offset));
+                reg->setString(string(str, offset + endOffset - nextVarLength));
+
+                offset += sizeof(unsigned);
+                break;
+        }
+        result.push_back(reg);
+    }
 }
 
-Schema::Relation SPSegment::relation() {}
+Schema::Relation SPSegment::relation() {
+    // Get Metadata Segment
+    // Load Relation from Metadata Segment
+}
 
 
 SPSegment::~SPSegment() {}
