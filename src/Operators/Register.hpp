@@ -37,7 +37,6 @@ class Register {
 	// Hash-operator for an integer
 	uint64_t hash();
 
-	//TODO: operator ==, <
 	bool operator==(Register &that);
 
 	bool operator==(Register *that);

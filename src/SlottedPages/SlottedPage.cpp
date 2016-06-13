@@ -24,9 +24,19 @@ SlottedPage::SlottedPage() : header(new Header()) {}
 unsigned SlottedPage::insert(const Record& r) {
     if (this->header->freeSpace < r.getLen()) throw InsufficientSpaceException;
 
-    // TODO if (actual space is insufficient) {
+
+    // Check whether uncompressed space would be sufficient
+    Slot* lastSlot;
+    for (int i = 0; i < this->header->slotCount; i++) {
+        lastSlot = getSlot(i);
+        if (lastSlot->isEmpty()) i--;
+    }
+    unsigned actualSpace =  lastSlot->offset() - 2 * sizeof(Slot);
+
+    // If uncompressed is not enough, try to compress
+    if (actualSpace < r.getLen()) {
         if (this->recompress() < r.getLen()) throw InsufficientSpaceException;
-    // }
+    }
 
     Slot* slot = this->header->firstFreeSlot;
 
@@ -72,8 +82,15 @@ unsigned SlottedPage::remove(TID tid) {
 
 
 unsigned SlottedPage::recompress() {
-    // TODO
-    return this->header->freeSpace;
+    // TODO Does not compactify at the moment
+
+    Slot* lastSlot;
+    for (int i = 0; i < this->header->slotCount; i++) {
+        lastSlot = getSlot(i);
+        if (lastSlot->isEmpty()) i--;
+    }
+    return lastSlot->offset() - 2 * sizeof(Slot);
+
 }
 
 

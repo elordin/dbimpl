@@ -115,7 +115,7 @@ Record SPSegment::inPlaceLookup(TID tid) {
 
     Slot* slot = page->getSlot(tid.getSlot());
 
-    if (slot->isMoved() || slot->length() == 0 && slot->offset() == 0) {
+    if (slot->isMoved() || slot->isEmpty()) {
         // Slot is empty: Return empty record
         bm->unfixPage(frame, false);
         return Record(0, nullptr);
@@ -236,6 +236,7 @@ std::vector<Register*> SPSegment::toRegisterVector(const char* data) {
 Schema::Relation SPSegment::relation() {
     // TODO Get Metadata Segment
     // TODO Load Relation from Metadata Segment
+    return Schema::Relation("NOT IMPLEMENTED");
 }
 
 

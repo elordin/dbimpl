@@ -23,11 +23,14 @@ bool TableScan::next() {
 	if (r.getLen() < 1) return this->next();
 
 	/*
-	// TODO Solve the recursion as a loop
+	// TODO Solve the recursion as a loop to not kill the stack
+
 	Record r = input->inPlaceLookup(TID(tid++));
 	while (r.getLen() < 1) {
 		r = input->inPlaceLookup(TID(tid++));
 	}
+
+	// Not possible since record can not be reassigned.
 	*/
 
 	currentTuple = r.getData();
