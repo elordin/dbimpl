@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <vector>
+#include <ostream>
 
 #include "Register.hpp"
 #include "Operator.cpp"
@@ -9,10 +10,10 @@
 class Print : public Operator{
  private:
     Operator* input;
+    std::ostream* target;
  public:
 
-	//TODO: initialized with an input operator and an output stream
-    Print(Operator* input);
+    Print(Operator* input, std::ostream* ostream);
 
 	void open();
 

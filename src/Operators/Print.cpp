@@ -5,7 +5,7 @@
 
 using namespace std;
 
-Print::Print(Operator* input) : input(input) {}
+Print::Print(Operator* input, std::ostream* target) : input(input), target(target) {}
 
 void Print::open(){
     this->input->open();
@@ -17,11 +17,11 @@ bool Print::next(){
 
 vector<Register*> Print::getOutput(){
     vector<Register*> tuple = this->input->getOutput();
-    std::cout << "[";
+    *this->target << "[";
     for (int i = 0; i < tuple.size(); i++) {
-        std::cout << tuple[i]->toString() << ", ";
+        *this->target << tuple[i]->toString() << ", ";
     }
-    std::cout << "]" << std::endl;
+    *this->target << "]" << std::endl;
 
     return tuple;
 }
