@@ -61,6 +61,7 @@ class SlottedPage {
     unsigned recompress();
 
     Slot* getSlot(TID tid);
+    unsigned getMaxSlot();
 
 /*
     Slot* getFreeSlot();

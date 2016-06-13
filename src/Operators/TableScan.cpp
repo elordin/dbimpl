@@ -2,6 +2,7 @@
 #include <vector>
 
 #include "TableScan.hpp"
+#include "../SlottedPages/Record.hpp"
 
 using namespace std;
 
@@ -12,12 +13,16 @@ TableScan::TableScan(SPSegment* relation)
 
 void TableScan::open() {
 	tid = 0;
-	// limit = TODO;
+	limit = this->input->getLastTID().tid;
 }
 
 bool TableScan::next() {
 	if (tid < limit) {
-		currentTuple = input->lookup(tid++).getData();
+
+		// TODO Skip empty records
+		// TODO Skip indirected records
+
+		currentTuple = input->lookup(TID(tid)).getData();
 		return true;
 	} else {
 		return false;

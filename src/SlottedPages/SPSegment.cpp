@@ -14,10 +14,13 @@ using namespace std;
 
 SPSegment::SPSegment(uint64_t segmentId, BufferManager* bm)
 	: bm(bm),
-      lastPage(0),
+      lastPage(segmentId << 48),
       segmentId(segmentId),
-      lastTID(0),
+      lastTID(segmentId << 48),
       fsi(std::map<uint64_t, unsigned>()) {}
+
+
+TID SPSegment::getLastTID() { return this->lastTID; }
 
 
 TID SPSegment::insert(const Record& r){
@@ -46,14 +49,22 @@ TID SPSegment::insert(const Record& r){
     // Write to page
     unsigned slotNum = page->insert(r);
 
-    // TODO update FSI
 
     bm->unfixPage(frame, true);
-    return TID(pageId, slotNum);
+
+    // Update lastTID
+    TID newTID = TID(pageId, slotNum);
+    if (newTID.tid > this->lastTID.tid) {
+        this->lastTID = newTID;
+    }
+
+    // Update FSI
+    this->fsi[newTID.getPage()] -= r.getLen() + (slotNum == page->getMaxSlot() ? sizeof(Slot) : 0);
+
+    return newTID;
 }
 
 bool SPSegment::remove(TID tid){
-
     // TODO assert(tid.getPage() is part of this segment);
 
     BufferFrame frame = bm->fixPage(tid.getPage(), true);
@@ -65,6 +76,10 @@ bool SPSegment::remove(TID tid){
     this->fsi[tid.getPage()] = space;
 
     bm->unfixPage(frame, true);
+
+    if (tid.tid == lastTID.tid) {
+        // TODO Update lastTID
+    }
     return true;
 }
 
@@ -72,15 +87,20 @@ Record SPSegment::lookup(TID tid) {
     // TODO assert(tid.getPage() is part of this segment);
 
     BufferFrame frame = bm->fixPage(tid.getPage(), false);
-
     SlottedPage* page = reinterpret_cast<SlottedPage*>(frame.getData());
 
     Slot* slot = page->getSlot(tid.getSlot());
 
-    if (slot->length() == 0 && slot->offset() == 0) {
+    if (slot->isMoved()) {
+        // Slot was indirected: Lookup that TID the slot points to recursively.
         bm->unfixPage(frame, false);
-        return Record(0, nullptr); // Slot is empty, return empty record
+        return this->lookup(TID(slot->slot));
+    } else if (slot->length() == 0 && slot->offset() == 0) {
+        // Slot is empty: Return empty record
+        bm->unfixPage(frame, false);
+        return Record(0, nullptr);
     } else {
+        // Slot has content: Return record with content.
         bm->unfixPage(frame, false);
         return Record(slot->length(), slot->getRecord()->getData());
     }
@@ -94,23 +114,28 @@ bool SPSegment::update(TID tid, const Record& r){
 	unsigned len_new = r.getLen();
 
 	BufferFrame frame = bm->fixPage(tid.getPage(), true);
-
     SlottedPage* page = reinterpret_cast<SlottedPage*>(frame.getData());
 
-	// If size doesn't change, use memcpy
-	if(len_old == len_new){
+    if(len_old == len_new){
+        // If size doesn't change, use memcpy
 		memcpy(page->getSlot(tid.getSlot())->getRecord(), &r, r.getLen());
 	} else if(len_old > len_new){
+        // Record has become smaller
 		memcpy(page->getSlot(tid.getSlot())->getRecord(), &r, r.getLen());
-        // TODO Update freeSpace
+        // TODO Update freeSpace of page
         // TODO update FSI
 	} else {
-		unsigned freeSpaceOnPage = page->freeSpace();
-    	if (freeSpaceOnPage >= len_new) {
-			page->remove(tid.getSlot());
+        // Record has become larger
+        unsigned freeSpaceOnPage = page->remove(tid.getSlot());
+        this->fsi[tid.getPage()] = freeSpaceOnPage;
+
+        if (freeSpaceOnPage >= len_new) {
+            // It fits on the page after removal
 			page->insert(r);
     	} else {
-			// TODO: indirection to new position
+            // Even after removal it is too large
+
+            // Get another page
             uint64_t sndPageId = this->lastPage + 1;
             for (auto it = this->fsi.rbegin(); it != this->fsi.rend(); it++) {
                 if (it->second >= r.getLen()) {
@@ -119,6 +144,8 @@ bool SPSegment::update(TID tid, const Record& r){
                 }
             }
             BufferFrame sndFrame = bm->fixPage(sndPageId, true);
+
+            // Create a new SlottedPage if necessary
             SlottedPage* sndPage = reinterpret_cast<SlottedPage*>(sndFrame.getData());
             if (sndPageId > this->lastPage) {
                 *sndPage = SlottedPage();
@@ -127,13 +154,13 @@ bool SPSegment::update(TID tid, const Record& r){
             }
 
             Slot* fstSlot = page->getSlot(tid.getSlot());
-            unsigned fstSpace = page->remove(tid);
-            // TODO update FSI
             assert(fstSlot->isEmpty());
 
+            // Insert into new page
             unsigned sndSlotNum = sndPage->insert(r);
-            // TODO update FSI
+            this->fsi[sndPageId] -= r.getLen() + (sndSlotNum == sndPage->getMaxSlot() ? sizeof(Slot) : 0);
 
+            // Update first slot to directo to second page.
             *fstSlot = Slot(TID(sndPageId, sndSlotNum));
 
             bm->unfixPage(sndFrame, true);
@@ -186,8 +213,8 @@ std::vector<Register*> SPSegment::toRegisterVector(const char* data) {
 }
 
 Schema::Relation SPSegment::relation() {
-    // Get Metadata Segment
-    // Load Relation from Metadata Segment
+    // TODO Get Metadata Segment
+    // TODO Load Relation from Metadata Segment
 }
 
 

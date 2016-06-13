@@ -21,6 +21,8 @@ class SPSegment {
     uint64_t segmentId;
     std::map<uint64_t, unsigned> fsi;
  public:
+    TID getLastTID();
+
     /**
      *  Constructor for a new SPSegment
      */
