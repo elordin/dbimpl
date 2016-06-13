@@ -14,7 +14,7 @@ class HashJoin : public Operator{
 	unsigned regIdLeft;
 	unsigned regIdRight;
 	vector<Register*> result;
-	std::unordered_map<uint64_t, Register*> hashTable;
+	std::unordered_map<uint64_t, vector<Register*>> hashTable;
  public:
     
 	//initialized with two input operators, and two register IDs. One ID is from the left side and one is from the right side. 
