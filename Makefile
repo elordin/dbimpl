@@ -18,10 +18,9 @@ FILES = BufferManager/BufferManager.cpp BufferManager/BufferFrame.cpp BufferMana
 		BTree/BTree.cpp \
 		Operators/Register.cpp Operators/HashJoin.cpp Operators/Print.cpp Operators/Projection.cpp \
 		Operators/Select.cpp Operators/TableScan.cpp \
-		operatorsTest.cpp
-		#BTreeTest.cpp
+		buffertest.cpp
 		#slottedTest.cpp
-		#buffertest.cpp \
+		#BTreeTest.cpp
 SRC = $(FILES:%=$(SRCDIR)/%)
 OBJ = $(FILES:%.cpp=$(OBJDIR)/%.o)
 
