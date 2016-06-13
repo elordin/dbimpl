@@ -106,6 +106,27 @@ Record SPSegment::lookup(TID tid) {
     }
 }
 
+
+Record SPSegment::inPlaceLookup(TID tid) {
+    // TODO assert(tid.getPage() is part of this segment);
+
+    BufferFrame frame = bm->fixPage(tid.getPage(), false);
+    SlottedPage* page = reinterpret_cast<SlottedPage*>(frame.getData());
+
+    Slot* slot = page->getSlot(tid.getSlot());
+
+    if (slot->isMoved() || slot->length() == 0 && slot->offset() == 0) {
+        // Slot is empty: Return empty record
+        bm->unfixPage(frame, false);
+        return Record(0, nullptr);
+    } else {
+        // Slot has content: Return record with content.
+        bm->unfixPage(frame, false);
+        return Record(slot->length(), slot->getRecord()->getData());
+    }
+}
+
+
 bool SPSegment::update(TID tid, const Record& r){
 
 	Record r_old = this->lookup(tid);

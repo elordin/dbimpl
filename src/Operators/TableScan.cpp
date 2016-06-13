@@ -17,16 +17,21 @@ void TableScan::open() {
 }
 
 bool TableScan::next() {
-	if (tid < limit) {
+	if (tid >= limit) return false;
 
-		// TODO Skip empty records
-		// TODO Skip indirected records
+	Record r = input->inPlaceLookup(TID(tid));
+	if (r.getLen() < 1) return this->next();
 
-		currentTuple = input->lookup(TID(tid)).getData();
-		return true;
-	} else {
-		return false;
+	/*
+	// TODO Solve the recursion as a loop
+	Record r = input->inPlaceLookup(TID(tid++));
+	while (r.getLen() < 1) {
+		r = input->inPlaceLookup(TID(tid++));
 	}
+	*/
+
+	currentTuple = r.getData();
+	return true;
 }
 
 vector<Register*> TableScan::getOutput() {

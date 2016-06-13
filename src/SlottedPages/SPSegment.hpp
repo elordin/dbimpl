@@ -55,6 +55,13 @@ class SPSegment {
      */
 	Record lookup(TID tid);
 
+
+    /**
+     *  Returns the read-only record associated with TID. Returns an empty record if slot redirects.
+     */
+    Record inPlaceLookup(TID tid);
+
+
 	/**
      *  Updates the record pointed to by tid with the content of record r.
      */
