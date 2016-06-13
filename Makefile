@@ -18,7 +18,6 @@ FILES = BufferManager/BufferManager.cpp BufferManager/BufferFrame.cpp BufferMana
 		BTree/BTree.cpp \
 		Operators/Register.cpp Operators/HashJoin.cpp Operators/Print.cpp Operators/Projection.cpp \
 		Operators/Select.cpp Operators/TableScan.cpp \
-		operatorsTest.cpp
 		#BTreeTest.cpp
 		#slottedTest.cpp
 		#buffertest.cpp \

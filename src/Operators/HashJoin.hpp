@@ -13,6 +13,7 @@ class HashJoin : public Operator{
 	Operator* rightOp;
 	unsigned regIdLeft;
 	unsigned regIdRight;
+	vector<Register*> result;
 	std::unordered_map<uint64_t, Register*> hashTable;
  public:
     

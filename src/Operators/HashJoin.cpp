@@ -14,10 +14,7 @@ HashJoin::HashJoin(Operator* leftOp, Operator* rightOp, unsigned regIdLeft, unsi
 
 void HashJoin::open(){
 	this->leftOp->open();
-}
-
-bool HashJoin::next(){
-
+	this->rightOp->open();
 	// build hashtable for the left side
 	while(leftOp->next()){
 		std::vector<Register*> tuple = leftOp->getOutput();
@@ -27,6 +24,9 @@ bool HashJoin::next(){
 		pair<uint64_t, Register*> pair (hashValue, attributeValue);
 		this->hashTable.insert(pair);
 	}
+}
+
+bool HashJoin::next(){
 
 	// probe right side
 	while(rightOp->next()){
@@ -38,8 +38,11 @@ bool HashJoin::next(){
 			// if hashValue matches any s in the bucket
 			Register* match = this->hashTable.at(hashValue);
 			if(match == attributeValue){
-				// concatenate r and s and store them(?)
-				pair<Register*, Register*> result (attributeValue, match);
+				// concatenate r and s and store them in result
+				vector<Register*>::iterator it;
+				it = result.begin();				
+				it = result.insert(it, attributeValue);
+				result.insert(it, match);
 				return true;
 			}
 		}
@@ -49,11 +52,12 @@ bool HashJoin::next(){
 }
 
 vector<Register*> HashJoin::getOutput(){
-	//TODO
+	return result;
 }
 
 void HashJoin::close(){
-
+	this->leftOp->close();
+	this->rightOp->close();
 }
     
 HashJoin::~HashJoin(){
