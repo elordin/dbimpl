@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <atomic>
+#include <mutex>
 #include <tbb/tbb.h>
 #include <unordered_map>
 
@@ -25,34 +26,52 @@ inline uint64_t hashKey(uint64_t k) {
 }
 
 class ChainingLockingHT {
-   public:
-   // Chained tuple entry
-   struct ChainingLockingHT {
-      uint64_t key;
-      uint64_t value;
-      Entry* next;
-   };
+    // Chained tuple entry
+    struct Entry {
+        uint64_t key;
+        uint64_t value;
+        Entry* next;
+    };
 
-   // Constructor
-   ChainingLockingHT(uint64_t size) {
-   }
+    struct Chain {
+        std::mutex lock;
+        Entry* head;
+        uint64_t size;
+        Chain() : head(nullptr), size(0) {}
+    };
+    private:
+        unordered_map<uint64_t, Chain*> table;
+    public:
 
-   // Destructor
-   ~ChainingLockingHT() {
-   }
+    // Constructor
+    ChainingLockingHT(uint64_t size) {
+        this->table = unordered_map<uint64_t, Chain*>();
+    }
 
-   // Returns the number of hits
-   inline uint64_t lookup(uint64_t key) {
-   }
+    // Destructor
+    ~ChainingLockingHT() {
+    }
 
-   inline void insert(Entry* entry) {
-   }
+    // Returns the number of hits
+    inline uint64_t lookup(uint64_t key) {
+        return this->table[key]->size;
+    }
+
+    inline void insert(Entry* entry) {
+        uint64_t key = hashKey(entry->key);
+        Chain* chain = this->table[key];
+        std::lock_guard<std::mutex> lock(chain->lock);
+
+        Entry* curr = chain->head;
+        while (curr->next != nullptr) {
+            curr = curr->next;
+        }
+        curr->next = entry;
+        chain->size++;
+    }
 };
 
 class ChainingHT {
-	private:
-		unordered_map<uint64_t, Entry> hashTable;
-   public:
    // Chained tuple entry
    struct Entry {
       uint64_t key;
@@ -60,9 +79,13 @@ class ChainingHT {
       Entry* next;
    };
 
+   private:
+      unordered_map<uint64_t, ChainingHT::Entry> hashTable;
+   public:
+
    // Constructor
-   ChainingHT(uint64_t size) 
-	: hashTable(new hashTable(size)){
+   ChainingHT(uint64_t size)
+    : hashTable(new hashTable(size)){
    }
 
    // Destructor
@@ -86,7 +109,7 @@ class ChainingHT {
    }
 
    inline void insert(Entry* entry) {
-		uint64_t hashValue = hashKey(entry->key);
+      uint64_t hashValue = hashKey(entry->key);
 		// if hashValue indicates an empty bucket, just insert
 		if(this->hashTable.find(hashValue) == this->hashTable.end()){
 			entry->next = NULL;
@@ -179,6 +202,5 @@ int main(int argc,char** argv) {
    }
 
    // Test you implementation here... (like the STL test above)
-
    return 0;
 }
