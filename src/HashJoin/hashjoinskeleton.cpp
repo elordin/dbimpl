@@ -72,16 +72,19 @@ class ChainingLockingHT {
 };
 
 class ChainingHT {
+
    // Chained tuple entry
-   struct Entry {
+   public: struct Entry {
       uint64_t key;
       uint64_t value;
       Entry* next;
+	  //Entry(uint64_t key, uint64_t value): key(key), value(value){}
    };
 
-   private:
+	private:
         unordered_map<uint64_t, ChainingHT::Entry*> hashTable;
-   public:
+
+	public:
 		std::atomic<Entry*> nextOfCurrentEntry;
 
    // Constructor
@@ -116,7 +119,7 @@ class ChainingHT {
 			pair<uint64_t, ChainingHT::Entry*> pair (hashValue, entry);
 			hashTable.insert(pair);
 		} else {
-			Entry* currentEntry = hashTable.at(entry->key);
+			Entry* currentEntry = hashTable.at(hashValue);
 			Entry* tmp = new Entry();
 			tmp->next = currentEntry->next;
 			nextOfCurrentEntry.store(currentEntry->next);
@@ -184,7 +187,7 @@ int main(int argc,char** argv) {
       for (uint64_t i=0; i<sizeR; i++)
          ht.emplace(R[i],0);
       tick_count probeTS=tick_count::now();
-      cout << "STL      build:" << (sizeR/1e6)/(probeTS-buildTS).seconds() << "MT/s ";
+      cout << "STL      	build:" << (sizeR/1e6)/(probeTS-buildTS).seconds() << "MT/s ";
 
       // Probe hash table and count number of hits
       std::atomic<uint64_t> hitCounter;
@@ -205,5 +208,36 @@ int main(int argc,char** argv) {
    }
 
    // Test you implementation here... (like the STL test above)
+   // Test of ChainingHT
+   {
+	  // Build hash table (single threaded)
+      tick_count buildTS=tick_count::now();
+      ChainingHT* c(new ChainingHT(sizeR));
+      for (uint64_t i=0; i<sizeR; i++){
+		 ChainingHT::Entry* e(new ChainingHT::Entry());
+		 e->key = hashKey(R[i]);
+		 e->value = R[i];
+         c->insert(e);
+	  }
+	  tick_count probeTS=tick_count::now();
+      cout << "ChainingHT      build:" << (sizeR/1e6)/(probeTS-buildTS).seconds() << "MT/s ";
+
+	  // Probe hash table and count number of hits
+      std::atomic<uint64_t> hitCounter;
+      hitCounter=0;
+      parallel_for(blocked_range<size_t>(0, sizeS), [&](const blocked_range<size_t>& range) {
+            uint64_t localHitCounter=0;
+			for (uint64_t i=0; i<sizeS; i++){
+				localHitCounter = c->lookup(hashKey(S[i]));
+				//cout << "localHitCounter: " << localHitCounter << endl;
+            }
+            hitCounter+=localHitCounter;
+         });
+      tick_count stopTS=tick_count::now();
+      cout << "probe: " << (sizeS/1e6)/(stopTS-probeTS).seconds() << "MT/s "
+           << "total: " << ((sizeR+sizeS)/1e6)/(stopTS-buildTS).seconds() << "MT/s "
+           << "count: " << hitCounter << endl;
+	}
+
    return 0;
 }
