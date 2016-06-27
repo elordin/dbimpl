@@ -7,7 +7,7 @@
 
 using namespace tbb;
 using namespace std;
-using namespace atomic;
+//using namespace atomic;
 
 inline uint64_t hashKey(uint64_t k) {
    // MurmurHash64A
@@ -80,17 +80,17 @@ class ChainingHT {
    };
 
    private:
-      unordered_map<uint64_t, ChainingHT::Entry> hashTable;
+        unordered_map<uint64_t, ChainingHT::Entry*> hashTable;
    public:
+		std::atomic<Entry*> nextOfCurrentEntry;
 
    // Constructor
-   ChainingHT(uint64_t size)
-    : hashTable(new hashTable(size)){
+   ChainingHT(uint64_t size){
+		this->hashTable = unordered_map<uint64_t, ChainingHT::Entry*>();
    }
 
    // Destructor
    ~ChainingHT() {
-		delete this->hashTable;
    }
 
    // Returns the number of hits
@@ -98,7 +98,7 @@ class ChainingHT {
 		if(this->hashTable.find(key) == this->hashTable.end()){
 			return 0;
 		} else {
-			Entry e = hashTable.at(key);
+			Entry* e = hashTable.at(key);
 			unsigned counter = 1;
 			while(!(e->next == NULL)){
 				counter++;
@@ -113,14 +113,17 @@ class ChainingHT {
 		// if hashValue indicates an empty bucket, just insert
 		if(this->hashTable.find(hashValue) == this->hashTable.end()){
 			entry->next = NULL;
-			hashTable.insert(entry);
+			pair<uint64_t, ChainingHT::Entry*> pair (hashValue, entry);
+			hashTable.insert(pair);
 		} else {
-			Entry currentEntry = hashTable.at(entry->key);
-			Entry tmp = new Entry();
+			Entry* currentEntry = hashTable.at(entry->key);
+			Entry* tmp = new Entry();
 			tmp->next = currentEntry->next;
-			while(!currentEntry->next.compare_exchange_weak(tmp->next, entry, memory_order_release, memory_order_relaxed));
+			nextOfCurrentEntry.store(currentEntry->next);
+			while(!nextOfCurrentEntry.compare_exchange_weak(tmp->next, entry, memory_order_release, memory_order_relaxed));
 			entry->next = tmp->next;
-			hashTable.insert(entry);
+			pair<uint64_t, ChainingHT::Entry*> pair (hashValue, entry);
+			hashTable.insert(pair);
 		}
    }
 };
