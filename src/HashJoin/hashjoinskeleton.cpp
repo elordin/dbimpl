@@ -98,13 +98,15 @@ class ChainingHT {
 
    // Returns the number of hits
    inline uint64_t lookup(uint64_t key) {
-		if(this->hashTable.find(key) == this->hashTable.end()){
+		uint64_t hashedKey = hashKey(key);
+		if(this->hashTable.count(hashedKey) < 1){		
 			return 0;
 		} else {
-			Entry* e = hashTable.at(key);
+			Entry* e = hashTable.at(hashedKey);
 			unsigned counter = 1;
-			while(!(e->next == NULL)){
+			while(e->next != nullptr){
 				counter++;
+				cout << "Here" << endl;
 				e = e->next;
 			}
 			return counter;
@@ -115,16 +117,22 @@ class ChainingHT {
       uint64_t hashValue = hashKey(entry->key);
 		// if hashValue indicates an empty bucket, just insert
 		if(this->hashTable.find(hashValue) == this->hashTable.end()){
-			entry->next = NULL;
+			entry->next = nullptr;
 			pair<uint64_t, ChainingHT::Entry*> pair (hashValue, entry);
 			hashTable.insert(pair);
 		} else {
+			cout << "else" << endl;
 			Entry* currentEntry = hashTable.at(hashValue);
-			Entry* tmp = new Entry();
-			tmp->next = currentEntry->next;
+			// durchlaufen bis nullptr
+			while(currentEntry->next != nullptr){
+				currentEntry = currentEntry->next;
+			}
+			//Entry* tmp = new Entry();
+			//tmp->next = currentEntry->next;
 			nextOfCurrentEntry.store(currentEntry->next);
-			while(!nextOfCurrentEntry.compare_exchange_weak(tmp->next, entry, memory_order_release, memory_order_relaxed));
-			entry->next = tmp->next;
+			while(!nextOfCurrentEntry.compare_exchange_weak(nullptr, entry, memory_order_release, memory_order_relaxed));
+			//cout << currentEntry->next->key << endl;
+			entry->next = nullptr;
 			pair<uint64_t, ChainingHT::Entry*> pair (hashValue, entry);
 			hashTable.insert(pair);
 		}
@@ -215,8 +223,8 @@ int main(int argc,char** argv) {
       ChainingHT* c(new ChainingHT(sizeR));
       for (uint64_t i=0; i<sizeR; i++){
 		 ChainingHT::Entry* e(new ChainingHT::Entry());
-		 e->key = hashKey(R[i]);
-		 e->value = R[i];
+		 e->key = R[i];
+		 e->value = 0;	//see your STL Test
          c->insert(e);
 	  }
 	  tick_count probeTS=tick_count::now();
@@ -227,9 +235,9 @@ int main(int argc,char** argv) {
       hitCounter=0;
       parallel_for(blocked_range<size_t>(0, sizeS), [&](const blocked_range<size_t>& range) {
             uint64_t localHitCounter=0;
-			for (uint64_t i=0; i<sizeS; i++){
-				localHitCounter = c->lookup(hashKey(S[i]));
-				//cout << "localHitCounter: " << localHitCounter << endl;
+			for (size_t i=range.begin(); i!=range.end(); ++i) {
+               localHitCounter =c->lookup(S[i]);
+				cout << "localHitCounter: " << localHitCounter << endl;
             }
             hitCounter+=localHitCounter;
          });
