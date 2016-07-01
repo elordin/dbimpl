@@ -100,18 +100,12 @@ class ChainingHT {
 		if(this->hashTable.count(hashedKey) < 1){		
 			return 0;
 		} else {
-			//Entry* e = hashTable.at(hashedKey);
-			auto range = hashTable.equal_range(hashedKey);
-			unsigned counter = 0;
-			for (unordered_map<uint64_t, ChainingHT::Entry*>::iterator it=range.first; it!=range.second; ++it) {
-                  counter++;
-					//cout << counter << endl;
-            }
-			/*while(e->next != nullptr){
+			Entry* e = hashTable.at(hashedKey);
+			unsigned counter = 1;
+			while(e->next != nullptr){
 				counter++;
-				cout << "Here" << endl;
 				e = e->next;
-			}*/
+			}
 			return counter;
 		}
    }
@@ -121,19 +115,18 @@ class ChainingHT {
 		// if hashValue indicates an empty bucket, just insert
 		if(this->hashTable.find(hashValue) == this->hashTable.end()){
 			entry->next = nullptr;
-			pair<uint64_t, ChainingHT::Entry*> pair (hashValue, entry);
-			hashTable.insert(pair);
+			hashTable.emplace(hashValue, entry);
 		} else {
 			entry->next = nullptr;
 			Entry* currentEntry = hashTable.at(hashValue);
 			while(currentEntry->next != nullptr){
 				currentEntry = currentEntry->next;
 			}
-			Entry* tmp = nullptr;
+			Entry* tmp = 0;
 			nextOfCurrentEntry.store(currentEntry->next);
 			while(!nextOfCurrentEntry.compare_exchange_weak(tmp, entry, memory_order_release, memory_order_relaxed));
-			pair<uint64_t, ChainingHT::Entry*> pair (hashValue, entry);
-			hashTable.insert(pair);
+			currentEntry->next = nextOfCurrentEntry.load();
+			hashTable.emplace(hashValue, entry);
 		}
    }
 };
@@ -269,7 +262,6 @@ int main(int argc,char** argv) {
             uint64_t localHitCounter=0;
 			for (size_t i=range.begin(); i!=range.end(); ++i) {
                localHitCounter += c->lookup(S[i]);
-				// cout << "localHitCounter: " << localHitCounter << endl;
             }
             hitCounter+=localHitCounter;
          });
