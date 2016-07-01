@@ -7,7 +7,6 @@
 
 using namespace tbb;
 using namespace std;
-//using namespace atomic;
 
 inline uint64_t hashKey(uint64_t k) {
    // MurmurHash64A
@@ -27,7 +26,7 @@ inline uint64_t hashKey(uint64_t k) {
 
 class ChainingLockingHT {
     // Chained tuple entry
-    struct Entry {
+    public: struct Entry {
         uint64_t key;
         uint64_t value;
         Entry* next;
@@ -60,7 +59,7 @@ class ChainingLockingHT {
     inline void insert(Entry* entry) {
         uint64_t key = hashKey(entry->key);
         Chain* chain = this->table[key];
-        std::lock_guard<std::mutex> lock(chain->lock);
+		std::lock_guard<std::mutex> lock(chain->lock);
 
         Entry* curr = chain->head;
         while (curr->next != nullptr) {
@@ -78,7 +77,6 @@ class ChainingHT {
       uint64_t key;
       uint64_t value;
       Entry* next;
-	  //Entry(uint64_t key, uint64_t value): key(key), value(value){}
    };
 
 	private:
@@ -102,13 +100,18 @@ class ChainingHT {
 		if(this->hashTable.count(hashedKey) < 1){		
 			return 0;
 		} else {
-			Entry* e = hashTable.at(hashedKey);
-			unsigned counter = 1;
-			while(e->next != nullptr){
+			//Entry* e = hashTable.at(hashedKey);
+			auto range = hashTable.equal_range(hashedKey);
+			unsigned counter = 0;
+			for (unordered_map<uint64_t, ChainingHT::Entry*>::iterator it=range.first; it!=range.second; ++it) {
+                  counter++;
+					//cout << counter << endl;
+            }
+			/*while(e->next != nullptr){
 				counter++;
 				cout << "Here" << endl;
 				e = e->next;
-			}
+			}*/
 			return counter;
 		}
    }
@@ -121,18 +124,14 @@ class ChainingHT {
 			pair<uint64_t, ChainingHT::Entry*> pair (hashValue, entry);
 			hashTable.insert(pair);
 		} else {
-			cout << "else" << endl;
+			entry->next = nullptr;
 			Entry* currentEntry = hashTable.at(hashValue);
-			// durchlaufen bis nullptr
 			while(currentEntry->next != nullptr){
 				currentEntry = currentEntry->next;
 			}
-			//Entry* tmp = new Entry();
-			//tmp->next = currentEntry->next;
+			Entry* tmp = nullptr;
 			nextOfCurrentEntry.store(currentEntry->next);
-			while(!nextOfCurrentEntry.compare_exchange_weak(nullptr, entry, memory_order_release, memory_order_relaxed));
-			//cout << currentEntry->next->key << endl;
-			entry->next = nullptr;
+			while(!nextOfCurrentEntry.compare_exchange_weak(tmp, entry, memory_order_release, memory_order_relaxed));
 			pair<uint64_t, ChainingHT::Entry*> pair (hashValue, entry);
 			hashTable.insert(pair);
 		}
@@ -195,7 +194,7 @@ int main(int argc,char** argv) {
       for (uint64_t i=0; i<sizeR; i++)
          ht.emplace(R[i],0);
       tick_count probeTS=tick_count::now();
-      cout << "STL      	build:" << (sizeR/1e6)/(probeTS-buildTS).seconds() << "MT/s ";
+      cout << "STL      	    build:" << (sizeR/1e6)/(probeTS-buildTS).seconds() << "MT/s ";
 
       // Probe hash table and count number of hits
       std::atomic<uint64_t> hitCounter;
@@ -215,20 +214,21 @@ int main(int argc,char** argv) {
            << "count: " << hitCounter << endl;
    }
 
-   // Test you implementation here... (like the STL test above)
-   // Test of ChainingHT
+   // Test of ChainingLockingHT
    {
-	  // Build hash table (single threaded)
+	  // Build hash table
       tick_count buildTS=tick_count::now();
-      ChainingHT* c(new ChainingHT(sizeR));
-      for (uint64_t i=0; i<sizeR; i++){
-		 ChainingHT::Entry* e(new ChainingHT::Entry());
-		 e->key = R[i];
-		 e->value = 0;	//see your STL Test
-         c->insert(e);
-	  }
+      ChainingLockingHT* cl(new ChainingLockingHT(sizeR));
+	  parallel_for(blocked_range<size_t>(0, sizeR), [&](const blocked_range<size_t>& range) {
+			for (size_t i=range.begin(); i!=range.end(); ++i) {
+                ChainingLockingHT::Entry* e(new ChainingLockingHT::Entry());
+		 		e->key = R[i];
+		 		e->value = 0;	//see your STL Test
+  //-----      		cl->insert(e);
+            }
+	  	 });
 	  tick_count probeTS=tick_count::now();
-      cout << "ChainingHT      build:" << (sizeR/1e6)/(probeTS-buildTS).seconds() << "MT/s ";
+      cout << "ChainingLockingHT   build:" << (sizeR/1e6)/(probeTS-buildTS).seconds() << "MT/s ";
 
 	  // Probe hash table and count number of hits
       std::atomic<uint64_t> hitCounter;
@@ -236,8 +236,69 @@ int main(int argc,char** argv) {
       parallel_for(blocked_range<size_t>(0, sizeS), [&](const blocked_range<size_t>& range) {
             uint64_t localHitCounter=0;
 			for (size_t i=range.begin(); i!=range.end(); ++i) {
-               localHitCounter =c->lookup(S[i]);
-				cout << "localHitCounter: " << localHitCounter << endl;
+  //-----            localHitCounter += cl->lookup(S[i]);
+            }
+            hitCounter+=localHitCounter;
+         });
+      tick_count stopTS=tick_count::now();
+      cout << "probe: " << (sizeS/1e6)/(stopTS-probeTS).seconds() << "MT/s "
+           << "total: " << ((sizeR+sizeS)/1e6)/(stopTS-buildTS).seconds() << "MT/s "
+           << "count: " << hitCounter << endl;
+	}
+
+   // Test of ChainingHT
+   {
+	  // Build hash table 
+      tick_count buildTS=tick_count::now();
+      ChainingHT* c(new ChainingHT(sizeR));
+	  parallel_for(blocked_range<size_t>(0, sizeR), [&](const blocked_range<size_t>& range) {
+			for (size_t i=range.begin(); i!=range.end(); ++i) {
+                ChainingHT::Entry* e(new ChainingHT::Entry());
+		 		e->key = R[i];
+		 		e->value = 0;	//see your STL Test
+         		c->insert(e);
+            }
+	  	 });
+	  tick_count probeTS=tick_count::now();
+      cout << "ChainingHT          build:" << (sizeR/1e6)/(probeTS-buildTS).seconds() << "MT/s ";
+
+	  // Probe hash table and count number of hits
+      std::atomic<uint64_t> hitCounter;
+      hitCounter=0;
+      parallel_for(blocked_range<size_t>(0, sizeS), [&](const blocked_range<size_t>& range) {
+            uint64_t localHitCounter=0;
+			for (size_t i=range.begin(); i!=range.end(); ++i) {
+               localHitCounter += c->lookup(S[i]);
+				// cout << "localHitCounter: " << localHitCounter << endl;
+            }
+            hitCounter+=localHitCounter;
+         });
+      tick_count stopTS=tick_count::now();
+      cout << "probe: " << (sizeS/1e6)/(stopTS-probeTS).seconds() << "MT/s "
+           << "total: " << ((sizeR+sizeS)/1e6)/(stopTS-buildTS).seconds() << "MT/s "
+           << "count: " << hitCounter << endl;
+	}
+
+   // Test of LinearProbing
+   {
+	  // Build hash table 
+      tick_count buildTS=tick_count::now();
+      LinearProbingHT* lp(new LinearProbingHT(sizeR));
+	  parallel_for(blocked_range<size_t>(0, sizeR), [&](const blocked_range<size_t>& range) {
+			for (size_t i=range.begin(); i!=range.end(); ++i) {
+         		lp->insert(R[i], 0);	  //see your STL Test
+            }
+	  	 });
+	  tick_count probeTS=tick_count::now();
+      cout << "LinearProbingHT     build:" << (sizeR/1e6)/(probeTS-buildTS).seconds() << "MT/s ";
+
+	  // Probe hash table and count number of hits
+      std::atomic<uint64_t> hitCounter;
+      hitCounter=0;
+      parallel_for(blocked_range<size_t>(0, sizeS), [&](const blocked_range<size_t>& range) {
+            uint64_t localHitCounter=0;
+			for (size_t i=range.begin(); i!=range.end(); ++i) {
+               localHitCounter += lp->lookup(S[i]);
             }
             hitCounter+=localHitCounter;
          });
