@@ -53,20 +53,29 @@ class ChainingLockingHT {
 
     // Returns the number of hits
     inline uint64_t lookup(uint64_t key) {
-        return this->table[key]->size;
+        return this->table[hashKey(key)]->size;
     }
 
     inline void insert(Entry* entry) {
         uint64_t key = hashKey(entry->key);
-        Chain* chain = this->table[key];
-		std::lock_guard<std::mutex> lock(chain->lock);
+		Chain* chain;
+		if(this->table.find(key) == this->table.end()){
+			entry->next = nullptr;
+			chain = new Chain();
+			chain->head = entry;
+			chain->size++;
+			this->table.emplace(key, chain);
+		} else {
+			Chain* chain = this->table[key];
+			std::lock_guard<std::mutex> lock(chain->lock);
 
-        Entry* curr = chain->head;
-        while (curr->next != nullptr) {
-            curr = curr->next;
-        }
-        curr->next = entry;
-        chain->size++;
+        	Entry* curr = chain->head;
+        	while (curr->next != nullptr) {
+            	curr = curr->next;
+        	}
+       		curr->next = entry;
+        	chain->size++;
+		}
     }
 };
 
@@ -87,7 +96,7 @@ class ChainingHT {
 
    // Constructor
    ChainingHT(uint64_t size){
-		this->hashTable = unordered_map<uint64_t, ChainingHT::Entry*>();
+		this->hashTable = unordered_map<uint64_t, ChainingHT::Entry*>(size);
    }
 
    // Destructor
@@ -217,7 +226,7 @@ int main(int argc,char** argv) {
                 ChainingLockingHT::Entry* e(new ChainingLockingHT::Entry());
 		 		e->key = R[i];
 		 		e->value = 0;	//see your STL Test
-  //-----      		cl->insert(e);
+        		cl->insert(e);
             }
 	  	 });
 	  tick_count probeTS=tick_count::now();
@@ -229,7 +238,7 @@ int main(int argc,char** argv) {
       parallel_for(blocked_range<size_t>(0, sizeS), [&](const blocked_range<size_t>& range) {
             uint64_t localHitCounter=0;
 			for (size_t i=range.begin(); i!=range.end(); ++i) {
-  //-----            localHitCounter += cl->lookup(S[i]);
+  	           localHitCounter += cl->lookup(S[i]);
             }
             hitCounter+=localHitCounter;
          });
