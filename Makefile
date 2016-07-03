@@ -5,7 +5,7 @@ CC = clang++
 CFLAGS = -std=c++11 -O0 -pthread # -Wall -Wextra -pedantic
 TFLAGS = -g -DTEST
 
-LFLAGS =
+LFLAGS = -ltbb
 OUTNAME = main
 
 SRCDIR = ./src
@@ -28,6 +28,10 @@ OBJ = $(FILES:%.cpp=$(OBJDIR)/%.o)
 
 all: compile
 	echo "\n\tUse \`make $(OUTNAME)\` to compile runnable.\n"
+
+as:
+	$(CC) $(CFLAGS) $(LFLAGS) src/HashJoin/hashjoinskeleton.cpp -o main
+	./main 10 10 4
 
 compile: $(OBJ)
 

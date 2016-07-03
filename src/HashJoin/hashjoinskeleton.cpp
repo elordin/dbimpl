@@ -106,7 +106,7 @@ class ChainingHT {
    // Returns the number of hits
    inline uint64_t lookup(uint64_t key) {
 		uint64_t hashedKey = hashKey(key);
-		if(this->hashTable.count(hashedKey) < 1){		
+		if(this->hashTable.count(hashedKey) < 1){
 			return 0;
 		} else {
 			Entry* e = hashTable.at(hashedKey);
@@ -147,6 +147,9 @@ class LinearProbingHT {
       uint64_t key;
       uint64_t value;
       std::atomic<bool> marker;
+      Entry(uint64_t key, uint64_t value) : key(key), value(value) {
+        marker.store(false);
+      }
    };
 
    // Constructor
@@ -159,10 +162,44 @@ class LinearProbingHT {
 
    // Returns the number of hits
    inline uint64_t lookup(uint64_t key) {
+        uint64_t hkey = hashKey(key);
+        uint64_t h = hkey;
+        uint64_t c = 1;
+        Entry* e = this->table[h];
+
+        while (e != nullptr) {
+            e = this->table[++h];
+            c++;
+        }
+
+        // while (e != nullptr && e->marker.load() && e->key == hkey) {
+            // e = this->table[++h];
+            // if (e->key == hkey) c++;
+        // }
+        return c;
    }
 
-   inline void insert(uint64_t key, uint64_t value) {
+   inline void insert(uint64_t key, Entry* value) {
+        uint64_t hkey = hashKey(key);
+        Entry* e = this->table[hkey];
+        if (e == nullptr) {
+            value->marker.store(false);
+            this->table.emplace(hkey, value);
+        } else {
+            uint64_t h = hkey;
+            while (e->key != hkey && e->marker.load()) {
+                e = this->table[++h];
+                if (e == nullptr) {
+                    std::cout << h << std::endl;
+                    this->table.emplace(h, value);
+                    break;
+                }
+            }
+        }
    }
+
+    private:
+        unordered_map<uint64_t, Entry*> table;
 };
 
 int main(int argc,char** argv) {
@@ -250,7 +287,7 @@ int main(int argc,char** argv) {
 
    // Test of ChainingHT
    {
-	  // Build hash table 
+	  // Build hash table
       tick_count buildTS=tick_count::now();
       ChainingHT* c(new ChainingHT(sizeR));
 	  parallel_for(blocked_range<size_t>(0, sizeR), [&](const blocked_range<size_t>& range) {
@@ -282,12 +319,12 @@ int main(int argc,char** argv) {
 
    // Test of LinearProbing
    {
-	  // Build hash table 
+	  // Build hash table
       tick_count buildTS=tick_count::now();
       LinearProbingHT* lp(new LinearProbingHT(sizeR));
 	  parallel_for(blocked_range<size_t>(0, sizeR), [&](const blocked_range<size_t>& range) {
 			for (size_t i=range.begin(); i!=range.end(); ++i) {
-         		lp->insert(R[i], 0);	  //see your STL Test
+         		lp->insert(R[i], new LinearProbingHT::Entry(R[i], 0));
             }
 	  	 });
 	  tick_count probeTS=tick_count::now();
