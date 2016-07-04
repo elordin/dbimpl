@@ -147,13 +147,22 @@ class LinearProbingHT {
       uint64_t key;
       uint64_t value;
       std::atomic<bool> marker;
+      Entry() : key(0), value(0) {
+        marker.store(true);
+      }
       Entry(uint64_t key, uint64_t value) : key(key), value(value) {
         marker.store(false);
+      }
+      Entry(const Entry& e) {
+        key = e.key;
+        value = e.value;
+        marker.store(e.marker.load());
       }
    };
 
    // Constructor
    LinearProbingHT(uint64_t size) {
+    this->table = unordered_map<uint64_t, Entry>(size);
    }
 
    // Destructor
@@ -164,42 +173,24 @@ class LinearProbingHT {
    inline uint64_t lookup(uint64_t key) {
         uint64_t hkey = hashKey(key);
         uint64_t h = hkey;
-        uint64_t c = 1;
-        Entry* e = this->table[h];
-
-        while (e != nullptr) {
-            e = this->table[++h];
-            c++;
+        uint64_t c = 0;
+        while (!this->table[h].marker.load()) {
+            if (hashKey(this->table[h].key) == hkey) c++;
+            h++;
         }
-
-        // while (e != nullptr && e->marker.load() && e->key == hkey) {
-            // e = this->table[++h];
-            // if (e->key == hkey) c++;
-        // }
         return c;
    }
 
-   inline void insert(uint64_t key, Entry* value) {
+   inline void insert(uint64_t key, uint64_t value) {
         uint64_t hkey = hashKey(key);
-        Entry* e = this->table[hkey];
-        if (e == nullptr) {
-            value->marker.store(false);
-            this->table.emplace(hkey, value);
-        } else {
-            uint64_t h = hkey;
-            while (e->key != hkey && e->marker.load()) {
-                e = this->table[++h];
-                if (e == nullptr) {
-                    std::cout << h << std::endl;
-                    this->table.emplace(h, value);
-                    break;
-                }
-            }
-        }
+        bool tmp = true; // cxw doesnt accept the literal
+        while (!this->table[hkey].marker.compare_exchange_weak(
+                tmp, false, memory_order_release, memory_order_relaxed)) { hkey++; }
+        this->table.emplace(hkey, Entry(key, value));
    }
 
     private:
-        unordered_map<uint64_t, Entry*> table;
+        unordered_map<uint64_t, Entry> table;
 };
 
 int main(int argc,char** argv) {
@@ -324,7 +315,7 @@ int main(int argc,char** argv) {
       LinearProbingHT* lp(new LinearProbingHT(sizeR));
 	  parallel_for(blocked_range<size_t>(0, sizeR), [&](const blocked_range<size_t>& range) {
 			for (size_t i=range.begin(); i!=range.end(); ++i) {
-         		lp->insert(R[i], new LinearProbingHT::Entry(R[i], 0));
+            lp->insert(R[i], 0);
             }
 	  	 });
 	  tick_count probeTS=tick_count::now();
